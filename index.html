@@ -517,7 +517,8 @@
                 return null;
             }
 
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${currentApiKey}`;
+            // 修改此處：將模型改為外部公用的 gemini-2.5-flash 或 gemini-1.5-flash
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${currentApiKey}`;
             const payload = {
                 contents: [{ parts: [{ text: prompt }] }],
                 systemInstruction: { parts: [{ text: "你是一位台灣頂級 STEM 與特教教學設計師。請產出專業、詳實且充滿創意的教案內容。使用 HTML 片段回傳，重點請用 <strong> 標籤加粗。UDL 術語請用『多元』。" }] }
