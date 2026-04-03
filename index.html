@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI-STEM 教師備課助理 </title>
+    <title>AI-STEM 教師備課助理 (台灣 108 課綱版)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -66,9 +66,6 @@
             </div>
             <button onclick="window.openCloudLibrary()" class="bg-indigo-600 hover:bg-indigo-500 border border-indigo-400 px-3 py-1.5 rounded text-sm font-bold transition flex items-center gap-2 shadow-sm">
                 <i class="fas fa-cloud"></i> 我的教案庫
-            </button>
-            <button onclick="window.openSettings()" class="w-8 h-8 bg-indigo-600 hover:bg-indigo-500 rounded-full flex items-center justify-center text-white border border-indigo-400 transition shadow-sm" title="設定 API Key">
-                <i class="fas fa-cog"></i>
             </button>
             <div class="w-8 h-8 bg-indigo-500 rounded-full flex items-center justify-center font-bold border-2 border-indigo-300 shadow-inner">T</div>
         </div>
@@ -243,7 +240,7 @@
     <div id="toast-container"></div>
 
     <!-- Modals -->
-    <!-- Topic Guide Modal (新增：主題靈感庫) -->
+    <!-- Topic Guide Modal (靈感庫) -->
     <div id="topic-guide-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl h-[80vh] flex flex-col overflow-hidden">
             <div class="p-5 bg-indigo-600 text-white flex justify-between items-center shrink-0 shadow-lg">
@@ -252,7 +249,6 @@
             </div>
             <div class="flex-1 p-6 overflow-y-auto space-y-6 bg-slate-50">
                 <p class="text-slate-600 text-sm">點擊下方按鈕，可直接將該主題帶入您的自訂主題欄位中：</p>
-                
                 <div>
                     <h5 class="font-bold text-emerald-700 mb-3"><i class="fas fa-leaf mr-2"></i>綠色能源與永續發展</h5>
                     <div class="flex flex-wrap gap-2">
@@ -262,33 +258,20 @@
                         <button onclick="window.selectSuggestedTopic('綠建築與節能隔熱')" class="px-3 py-1.5 bg-white border border-emerald-200 text-emerald-700 rounded-lg text-sm font-bold shadow-sm hover:bg-emerald-600 hover:text-white transition">綠建築與節能隔熱</button>
                     </div>
                 </div>
-
                 <div>
                     <h5 class="font-bold text-blue-700 mb-3"><i class="fas fa-robot mr-2"></i>機器人、程式與物聯網</h5>
                     <div class="flex flex-wrap gap-2">
                         <button onclick="window.selectSuggestedTopic('仿生機械獸/自走車')" class="px-3 py-1.5 bg-white border border-blue-200 text-blue-700 rounded-lg text-sm font-bold shadow-sm hover:bg-blue-600 hover:text-white transition">仿生機械獸/自走車</button>
                         <button onclick="window.selectSuggestedTopic('智慧植栽自動澆水系統')" class="px-3 py-1.5 bg-white border border-blue-200 text-blue-700 rounded-lg text-sm font-bold shadow-sm hover:bg-blue-600 hover:text-white transition">智慧植栽自動澆水系統</button>
                         <button onclick="window.selectSuggestedTopic('防盜雷射警報器')" class="px-3 py-1.5 bg-white border border-blue-200 text-blue-700 rounded-lg text-sm font-bold shadow-sm hover:bg-blue-600 hover:text-white transition">防盜雷射警報器</button>
-                        <button onclick="window.selectSuggestedTopic('互動式交通號誌')" class="px-3 py-1.5 bg-white border border-blue-200 text-blue-700 rounded-lg text-sm font-bold shadow-sm hover:bg-blue-600 hover:text-white transition">互動式交通號誌</button>
                     </div>
                 </div>
-
                 <div>
                     <h5 class="font-bold text-amber-700 mb-3"><i class="fas fa-building mr-2"></i>結構工程與力學</h5>
                     <div class="flex flex-wrap gap-2">
                         <button onclick="window.selectSuggestedTopic('橋樑承重挑戰')" class="px-3 py-1.5 bg-white border border-amber-200 text-amber-700 rounded-lg text-sm font-bold shadow-sm hover:bg-amber-600 hover:text-white transition">橋樑承重挑戰</button>
                         <button onclick="window.selectSuggestedTopic('投石車與槓桿原理')" class="px-3 py-1.5 bg-white border border-amber-200 text-amber-700 rounded-lg text-sm font-bold shadow-sm hover:bg-amber-600 hover:text-white transition">投石車與槓桿原理</button>
-                        <button onclick="window.selectSuggestedTopic('耐震建築結構')" class="px-3 py-1.5 bg-white border border-amber-200 text-amber-700 rounded-lg text-sm font-bold shadow-sm hover:bg-amber-600 hover:text-white transition">耐震建築結構</button>
                         <button onclick="window.selectSuggestedTopic('液壓機械手臂')" class="px-3 py-1.5 bg-white border border-amber-200 text-amber-700 rounded-lg text-sm font-bold shadow-sm hover:bg-amber-600 hover:text-white transition">液壓機械手臂</button>
-                    </div>
-                </div>
-
-                <div>
-                    <h5 class="font-bold text-purple-700 mb-3"><i class="fas fa-rocket mr-2"></i>太空探索與飛行科技</h5>
-                    <div class="flex flex-wrap gap-2">
-                        <button onclick="window.selectSuggestedTopic('水火箭/氣火箭設計')" class="px-3 py-1.5 bg-white border border-purple-200 text-purple-700 rounded-lg text-sm font-bold shadow-sm hover:bg-purple-600 hover:text-white transition">水火箭/氣火箭設計</button>
-                        <button onclick="window.selectSuggestedTopic('安全降落艙(雞蛋護送)')" class="px-3 py-1.5 bg-white border border-purple-200 text-purple-700 rounded-lg text-sm font-bold shadow-sm hover:bg-purple-600 hover:text-white transition">安全降落艙(雞蛋護送)</button>
-                        <button onclick="window.selectSuggestedTopic('滑翔翼與空氣動力學')" class="px-3 py-1.5 bg-white border border-purple-200 text-purple-700 rounded-lg text-sm font-bold shadow-sm hover:bg-purple-600 hover:text-white transition">滑翔翼與空氣動力學</button>
                     </div>
                 </div>
             </div>
@@ -339,7 +322,7 @@
         </div>
     </div>
 
-    <!-- Expand Modal -->
+    <!-- Expand Modal (手動編輯) -->
     <div id="expand-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl h-[70vh] flex flex-col overflow-hidden">
             <div class="p-4 border-b flex justify-between bg-slate-50 shadow-sm">
@@ -365,40 +348,21 @@
         </div>
     </div>
 
-    <!-- Settings Modal (API Key 設定) -->
-    <div id="settings-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col overflow-hidden">
-            <div class="p-5 bg-slate-800 text-white flex justify-between items-center shadow-lg">
-                <h3 class="font-bold text-lg"><i class="fas fa-cog mr-2"></i>系統設定</h3>
-                <button onclick="window.closeSettings()" class="text-2xl hover:text-slate-300 transition">&times;</button>
-            </div>
-            <div class="p-6 space-y-4">
-                <div>
-                    <label class="block text-sm font-bold text-slate-700 mb-2">Google Gemini API Key <span class="text-red-500">*</span></label>
-                    <input type="password" id="api-key-input" class="w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-sm" placeholder="AIzaSy...">
-                    <p class="text-xs text-slate-500 mt-2">
-                        由於您已部署至外部平台，請輸入您自己的 Gemini API 金鑰。該金鑰僅會保存在您的瀏覽器 (Local Storage) 中，不會上傳至任何伺服器。
-                    </p>
-                    <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-xs text-indigo-500 hover:text-indigo-700 font-bold mt-2 inline-block"><i class="fas fa-external-link-alt mr-1"></i>點此前往 Google AI Studio 申請免費金鑰</a>
-                </div>
-            </div>
-            <div class="p-4 border-t bg-slate-50 flex justify-end gap-2">
-                <button onclick="window.closeSettings()" class="px-4 py-2 bg-slate-200 text-slate-700 font-bold rounded-lg hover:bg-slate-300 transition">取消</button>
-                <button onclick="window.saveSettings()" class="px-4 py-2 bg-indigo-600 text-white font-bold rounded-lg shadow hover:bg-indigo-700 transition">儲存設定</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Firebase SDK Logic -->
+    <!-- 全部整合到一起的單一 Script (包含 Firebase 與所有邏輯) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDocs, deleteDoc, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+        // Firebase Init
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         let app, auth, db, currentUser = null;
-        try { app = initializeApp(firebaseConfig); auth = getAuth(app); db = getFirestore(app); } catch(e) {}
+        try { 
+            app = initializeApp(firebaseConfig); 
+            auth = getAuth(app); 
+            db = getFirestore(app); 
+        } catch(e) {}
 
         if(auth) {
             (async () => {
@@ -407,6 +371,13 @@
             })();
         }
 
+        // Global Variables
+        const apiKey = ""; 
+        window.preGeneratedActivities = {};
+        window.currentActiveTab = 'tab-basic';
+        window.isEditMode = false;
+
+        // Utility: Toast
         window.showToast = (msg, type = "info") => {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
@@ -417,122 +388,52 @@
             setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateX(50px)'; toast.style.transition = 'all 0.4s'; setTimeout(() => toast.remove(), 400); }, 3500);
         };
 
-        window.saveToCloud = async function() {
-            if (!currentUser) return window.showToast("連線中，請稍後重試...", "info");
-            const docId = Date.now().toString();
-            const planData = {
-                id: docId, topic: window.getActualTopic(), grade: document.getElementById('grade-level').value,
-                htmlBasic: document.getElementById('render-basic').innerHTML,
-                htmlUdl: document.getElementById('render-udl').innerHTML,
-                htmlDi: document.getElementById('render-di').innerHTML,
-                htmlIep: document.getElementById('render-iep').innerHTML,
-                timestamp: new Date().toISOString()
-            };
-            try {
-                await setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'lesson_plans', docId), planData);
-                window.showToast("教案已成功同步至雲端！", "success");
-            } catch (e) { window.showToast("儲存失敗，請檢查網路。", "error"); }
-        };
-
-        window.openCloudLibrary = async function() {
-            document.getElementById('library-modal').classList.remove('hidden');
-            const container = document.getElementById('library-content');
-            if (!currentUser) { container.innerHTML = '<div class="text-center py-10">連線異常。</div>'; return; }
-            container.innerHTML = '<div class="text-center py-10 font-bold text-indigo-500"><i class="fas fa-sync fa-spin mr-2"></i>同步雲端檔案中...</div>';
-            try {
-                const snap = await getDocs(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'lesson_plans'));
-                if (snap.empty) { container.innerHTML = '<div class="text-center py-10 text-slate-400">目前雲端沒有任何存檔。</div>'; return; }
-                let html = '<div class="grid grid-cols-1 md:grid-cols-2 gap-4">';
-                snap.forEach(docSnap => {
-                    const d = docSnap.data();
-                    html += `
-                        <div class="bg-white border rounded-xl p-5 shadow-sm hover:shadow-md transition">
-                            <h4 class="font-bold text-indigo-800 text-lg line-clamp-1">${d.topic}</h4>
-                            <p class="text-xs text-slate-400 mb-4">${new Date(d.timestamp).toLocaleString()}</p>
-                            <div class="flex gap-2">
-                                <button onclick="window.loadPlanFromCloud('${d.id}')" class="flex-1 bg-indigo-50 text-indigo-700 py-2 rounded-lg text-sm font-bold hover:bg-indigo-600 hover:text-white transition">開啟教案</button>
-                                <button onclick="window.deletePlanFromCloud('${d.id}')" class="w-12 bg-red-50 text-red-500 py-2 rounded-lg hover:bg-red-500 hover:text-white transition"><i class="fas fa-trash-alt"></i></button>
-                            </div>
-                        </div>`;
-                });
-                container.innerHTML = html + '</div>';
-                window.cachedPlans = snap.docs.map(d => d.data());
-            } catch (e) { container.innerHTML = '載入錯誤。'; }
-        };
-
-        window.deletePlanFromCloud = async function(docId) {
-            if(!confirm("確定永久刪除此教案嗎？此動作無法復原。")) return;
-            try {
-                await deleteDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'lesson_plans', docId));
-                window.showToast("已成功刪除雲端紀錄。", "success");
-                window.openCloudLibrary(); 
-            } catch (e) { window.showToast("刪除失敗。", "error"); }
-        };
-        window.closeCloudLibrary = () => document.getElementById('library-modal').classList.add('hidden');
-    </script>
-
-    <!-- App UI & AI Core Interaction -->
-    <script>
-        let isEditMode = false;
-        
-        // 取得 API Key (優先從 localStorage 讀取)
-        window.getApiKey = () => {
-            const storedKey = localStorage.getItem('gemini_api_key');
-            if (storedKey) return storedKey;
-            const defaultKey = ""; 
-            return defaultKey || null;
-        };
-
-        // 開關設定面板
-        window.openSettings = () => {
-            document.getElementById('api-key-input').value = localStorage.getItem('gemini_api_key') || "";
-            document.getElementById('settings-modal').classList.remove('hidden');
-        };
-        window.closeSettings = () => document.getElementById('settings-modal').classList.add('hidden');
-        
-        // 儲存設定
-        window.saveSettings = () => {
-            const key = document.getElementById('api-key-input').value.trim();
-            if (key) {
-                localStorage.setItem('gemini_api_key', key);
-                window.showToast("API Key 已儲存至您的瀏覽器！", "success");
-            } else {
-                localStorage.removeItem('gemini_api_key');
-                window.showToast("API Key 已清除。", "info");
-            }
-            window.closeSettings();
-        };
-
-        let preGeneratedActivities = {};
-        
+        // Utility: AI Fetch Wrapper
         const safe = (v) => (v === undefined || v === null || v === "") ? "AI 尚在規劃具體情境與步驟..." : v;
 
-        async function callGemini(prompt, isJSON = false, schema = null) {
-            const currentApiKey = window.getApiKey();
-            if (!currentApiKey) {
-                window.showToast("請先點擊右上角 ⚙️ 設定您的 Gemini API Key", "error");
-                document.getElementById('loading-state')?.classList.add('hidden');
-                document.getElementById('empty-state')?.classList.remove('hidden');
-                window.openSettings();
-                return null;
+        async function fetchWithRetry(url, options, retries = 3) {
+            let delay = 1000;
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const res = await fetch(url, options);
+                    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+                    return await res.json();
+                } catch (err) {
+                    if (i === retries - 1) throw err;
+                    await new Promise(r => setTimeout(r, delay));
+                    delay *= 2;
+                }
             }
-
-            // 修改此處：將模型改為外部公用的 gemini-2.5-flash 或 gemini-1.5-flash
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${currentApiKey}`;
-            const payload = {
-                contents: [{ parts: [{ text: prompt }] }],
-                systemInstruction: { parts: [{ text: "你是一位台灣頂級 STEM 與特教教學設計師。請產出專業、詳實且充滿創意的教案內容。使用 HTML 片段回傳，重點請用 <strong> 標籤加粗。UDL 術語請用『多元』。" }] }
-            };
-            if(isJSON) payload.generationConfig = { responseMimeType: "application/json", responseSchema: schema };
-            try {
-                const res = await fetch(url, { method: 'POST', body: JSON.stringify(payload) });
-                const data = await res.json();
-                const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-                if(!text) return null;
-                return isJSON ? JSON.parse(text) : text.replace(/```html/g, '').replace(/```/g, '').trim();
-            } catch (e) { console.error("API Call Error", e); return null; }
         }
 
+        async function callGemini(prompt, isJSON = false, schema = null) {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }],
+                systemInstruction: { parts: [{ text: "你是一位台灣頂級 STEM 與特教教學設計師。請產出專業、詳實且充滿創意的教案內容。請使用 HTML 標籤排版 (如 <br>, <ul>, <li>)，重點請用 <strong> 加粗，嚴禁使用 Markdown 的 **。UDL 術語請用『多元』。" }] }
+            };
+            if(isJSON) payload.generationConfig = { responseMimeType: "application/json", responseSchema: schema };
+            
+            try {
+                const data = await fetchWithRetry(url, { method: 'POST', body: JSON.stringify(payload) });
+                const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                if(!text) return null;
+                
+                if (isJSON) {
+                    let cleanText = text.replace(/```json/gi, '').replace(/```/gi, '').trim();
+                    return JSON.parse(cleanText);
+                } else {
+                    return text.replace(/```html/gi, '').replace(/```/gi, '').trim();
+                }
+            } catch (e) { 
+                console.error("API Call Error", e); 
+                return null; 
+            }
+        }
+
+        // ==========================================
+        // UI & Modal Handlers
+        // ==========================================
         window.toggleSidebar = () => {
             const sb = document.getElementById('left-sidebar');
             const icon = document.getElementById('sidebar-toggle-icon');
@@ -545,8 +446,7 @@
         };
 
         window.toggleAccordion = (pId, iId) => {
-            const p = document.getElementById(pId);
-            p.classList.toggle('hidden');
+            document.getElementById(pId).classList.toggle('hidden');
             document.getElementById(iId).classList.toggle('rotate-180');
         };
 
@@ -561,11 +461,9 @@
             return s.value === 'custom' ? (document.getElementById('custom-topic-input').value || '未命名主題') : s.value;
         };
 
-        // 開啟/關閉 靈感主題庫
         window.openTopicGuide = () => document.getElementById('topic-guide-modal').classList.remove('hidden');
         window.closeTopicGuide = () => document.getElementById('topic-guide-modal').classList.add('hidden');
 
-        // 將選擇的主題填入自訂欄位
         window.selectSuggestedTopic = (topicName) => {
             const select = document.getElementById('course-topic');
             const input = document.getElementById('custom-topic-input');
@@ -602,7 +500,87 @@
 
         window.toggleIepUI = () => document.getElementById('stage-2-container').classList.toggle('opacity-50', !document.getElementById('chk-iep').checked);
 
-        // Core Generation - 教案
+        // ==========================================
+        // Cloud Handlers (Firebase)
+        // ==========================================
+        window.saveToCloud = async function() {
+            if (!currentUser) return window.showToast("連線中，請稍後重試...", "info");
+            const docId = Date.now().toString();
+            const planData = {
+                id: docId, topic: window.getActualTopic(), grade: document.getElementById('grade-level').value,
+                htmlBasic: document.getElementById('render-basic').innerHTML,
+                htmlUdl: document.getElementById('render-udl').innerHTML,
+                htmlDi: document.getElementById('render-di').innerHTML,
+                htmlIep: document.getElementById('render-iep').innerHTML,
+                timestamp: new Date().toISOString()
+            };
+            try {
+                await setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'lesson_plans', docId), planData);
+                window.showToast("教案已成功同步至雲端！", "success");
+            } catch (e) { window.showToast("儲存失敗，請檢查網路。", "error"); }
+        };
+
+        window.openCloudLibrary = async function() {
+            document.getElementById('library-modal').classList.remove('hidden');
+            const container = document.getElementById('library-content');
+            if (!currentUser) { container.innerHTML = '<div class="text-center py-10">連線異常。</div>'; return; }
+            container.innerHTML = '<div class="text-center py-10 font-bold text-indigo-500"><i class="fas fa-sync fa-spin mr-2"></i>同步雲端檔案中...</div>';
+            try {
+                const snap = await getDocs(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'lesson_plans'));
+                if (snap.empty) { container.innerHTML = '<div class="text-center py-10 text-slate-400">目前雲端沒有任何存檔。</div>'; return; }
+                let html = '<div class="grid grid-cols-1 md:grid-cols-2 gap-4">';
+                snap.forEach(docSnap => {
+                    const d = docSnap.data();
+                    html += `
+                        <div class="bg-white border rounded-xl p-5 shadow-sm hover:shadow-md transition">
+                            <h4 class="font-bold text-indigo-800 text-lg line-clamp-1">${d.topic}</h4>
+                            <p class="text-xs text-slate-400 mb-4">${new Date(d.timestamp).toLocaleString()}</p>
+                            <div class="flex gap-2">
+                                <button onclick="window.loadPlanFromCloud('${d.id}')" class="flex-1 bg-indigo-50 text-indigo-700 py-1.5 rounded-lg text-sm font-bold hover:bg-indigo-600 hover:text-white transition">開啟教案</button>
+                                <button onclick="window.deletePlanFromCloud('${d.id}')" class="w-12 bg-red-50 text-red-500 py-1.5 rounded-lg hover:bg-red-500 hover:text-white transition"><i class="fas fa-trash-alt"></i></button>
+                            </div>
+                        </div>`;
+                });
+                container.innerHTML = html + '</div>';
+                window.cachedPlans = snap.docs.map(d => d.data());
+            } catch (e) { container.innerHTML = '載入錯誤。'; }
+        };
+
+        window.deletePlanFromCloud = async function(docId) {
+            if(!confirm("確定永久刪除此教案嗎？此動作無法復原。")) return;
+            try {
+                await deleteDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'lesson_plans', docId));
+                window.showToast("已成功刪除雲端紀錄。", "success");
+                window.openCloudLibrary(); 
+            } catch (e) { window.showToast("刪除失敗。", "error"); }
+        };
+
+        window.closeCloudLibrary = () => document.getElementById('library-modal').classList.add('hidden');
+
+        window.loadPlanFromCloud = function(docId) {
+            const plan = window.cachedPlans.find(p => p.id === docId); if(!plan) return;
+            document.getElementById('empty-state').classList.add('hidden'); document.getElementById('content-views').classList.remove('hidden');
+            document.getElementById('tabs-container').classList.remove('hidden'); document.getElementById('toolbar-container').classList.remove('hidden');
+            document.getElementById('stage-2-container').classList.remove('opacity-50', 'pointer-events-none');
+            
+            document.getElementById('render-basic').innerHTML = plan.htmlBasic;
+            document.getElementById('render-udl').innerHTML = plan.htmlUdl;
+            document.getElementById('render-di').innerHTML = plan.htmlDi;
+            document.getElementById('render-iep').innerHTML = plan.htmlIep;
+            
+            document.getElementById('btn-tab-basic').classList.remove('hidden');
+            plan.htmlUdl ? document.getElementById('btn-tab-udl').classList.remove('hidden') : document.getElementById('btn-tab-udl').classList.add('hidden');
+            plan.htmlDi ? document.getElementById('btn-tab-di').classList.remove('hidden') : document.getElementById('btn-tab-di').classList.add('hidden');
+            plan.htmlIep ? document.getElementById('btn-tab-iep').classList.remove('hidden') : document.getElementById('btn-tab-iep').classList.add('hidden');
+            
+            window.closeCloudLibrary(); window.switchTab('tab-basic');
+            window.showToast("教案載入成功！", "success");
+            const sb = document.getElementById('left-sidebar'); if(sb.classList.contains('sidebar-collapsed')) window.toggleSidebar();
+        };
+
+        // ==========================================
+        // Core Generation Handlers
+        // ==========================================
         window.generateDraft = async () => {
             const topic = window.getActualTopic();
             if(!topic || !document.getElementById('grade-level').value) return alert("請選擇主題與學段！");
@@ -615,20 +593,21 @@
                 type: "OBJECT",
                 properties: {
                     design: { type: "STRING", description: "設計理念，敘述流暢" }, 
-                    objectives: { type: "STRING", description: "學習目標 (ul li 格式)" },
-                    act1_title: { type: "STRING" }, act1_steps: { type: "STRING" }, act1_eval: { type: "STRING" },
-                    act2_A_title: { type: "STRING" }, act2_A_steps: { type: "STRING" },
-                    act2_B_title: { type: "STRING" }, act2_B_steps: { type: "STRING" },
-                    act2_C_title: { type: "STRING" }, act2_C_steps: { type: "STRING" },
+                    objectives: { type: "STRING", description: "學習目標 (請使用 ul li 格式列出)" },
+                    act1_title: { type: "STRING" }, act1_steps: { type: "STRING", description: "詳細的教學引導與活動對話" }, act1_eval: { type: "STRING" },
+                    act2_A_title: { type: "STRING" }, act2_A_steps: { type: "STRING", description: "數位方案的詳細教學與學生實作步驟" },
+                    act2_B_title: { type: "STRING" }, act2_B_steps: { type: "STRING", description: "實作方案的詳細教學與學生實作步驟" },
+                    act2_C_title: { type: "STRING" }, act2_C_steps: { type: "STRING", description: "協作方案的詳細教學與學生實作步驟" },
                     act2_eval: { type: "STRING" },
-                    act3_title: { type: "STRING" }, act3_steps: { type: "STRING" }, act3_eval: { type: "STRING" }
+                    act3_title: { type: "STRING" }, act3_steps: { type: "STRING", description: "詳細的總結步驟" }, act3_eval: { type: "STRING" }
                 }
             };
-            const prompt = `針對「${topic}」深度轉化生成極度詳細的 STEM 教案。分析：${document.getElementById('addie-a').value}。目標：${document.getElementById('addie-d').value}。教材：${document.getElementById('addie-dev').value}。包含教師對話引導、學生活動細節。請根據輸入的目標轉化為具體的「學習目標(objectives)」。一次性生成發展活動的三個方案：A(數位闖關)、B(實體探究)、C(混合協作)。`;
+            
+            const prompt = `針對「${topic}」深度轉化生成極度詳細的 STEM 教案。分析：${document.getElementById('addie-a').value}。目標：${document.getElementById('addie-d').value}。教材：${document.getElementById('addie-dev').value}。實施方式：${document.getElementById('addie-i').value}。請根據輸入的目標轉化為具體的「學習目標(objectives)」。並一次性生成發展活動的三個方案：A(數位闖關)、B(實體探究)、C(混合協作)。內容必須豐富，包含教師提問與學生預期反應。`;
             const res = await callGemini(prompt, true, schema);
 
             if(res) {
-                preGeneratedActivities = { 
+                window.preGeneratedActivities = { 
                     "活動一": `<strong class="text-indigo-800 text-lg">活動一 (數位)：${safe(res.act2_A_title)}</strong><br><br>${safe(res.act2_A_steps)}`, 
                     "活動二": `<strong class="text-indigo-800 text-lg">活動二 (實作)：${safe(res.act2_B_title)}</strong><br><br>${safe(res.act2_B_steps)}`, 
                     "活動三": `<strong class="text-indigo-800 text-lg">活動三 (協作)：${safe(res.act2_C_title)}</strong><br><br>${safe(res.act2_C_steps)}` 
@@ -655,7 +634,7 @@
                                 <button onclick="window.changeScheme(this, '活動二')" class="scheme-btn bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg text-xs font-bold border border-transparent transition">活動二 (實作)</button>
                                 <button onclick="window.changeScheme(this, '活動三')" class="scheme-btn bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg text-xs font-bold border border-transparent transition">活動三 (協作)</button>
                             </div>
-                            <div id="act2-content" class="content-text">${preGeneratedActivities["活動一"]}</div>
+                            <div id="act2-content" class="content-text">${window.preGeneratedActivities["活動一"]}</div>
                         </td><td class="text-center">${safe(res.act2_eval)}</td></tr>
                         
                         <tr><td class="font-bold text-center">綜合活動<br><span class="text-xs font-normal">10 min</span></td><td id="sec-act3">
@@ -669,19 +648,22 @@
                 document.getElementById('toolbar-container').classList.remove('hidden');
                 document.getElementById('stage-2-container').classList.remove('opacity-50', 'pointer-events-none');
                 window.switchTab('tab-basic');
+                window.showToast("STEM 課程設計生成完畢！", "success");
                 
                 const sb = document.getElementById('left-sidebar');
                 if(!sb.classList.contains('sidebar-collapsed')) window.toggleSidebar();
-            } else { alert("AI 忙碌中..."); document.getElementById('loading-state').classList.add('hidden'); }
+            } else { 
+                window.showToast("AI 忙碌中或發生錯誤，請稍後重試。", "error"); 
+                document.getElementById('loading-state').classList.add('hidden'); 
+            }
         };
 
         window.changeScheme = (btn, scheme) => {
             document.querySelectorAll('.scheme-btn').forEach(b => b.classList.remove('scheme-btn-active'));
             btn.classList.add('scheme-btn-active');
-            document.getElementById('act2-content').innerHTML = preGeneratedActivities[scheme] || "載入失敗";
+            document.getElementById('act2-content').innerHTML = window.preGeneratedActivities[scheme] || "載入失敗";
         };
 
-        // Core Generation - 三級建議
         window.generateSuggestions = async () => {
             const wantsUDL = document.getElementById('chk-udl').checked;
             const wantsDI = document.getElementById('chk-di').checked;
@@ -695,12 +677,17 @@
             const schema = {
                 type: "OBJECT",
                 properties: {
-                    ur: { type: "STRING" }, ua: { type: "STRING" }, ue: { type: "STRING" },
+                    ur: { type: "STRING", description: "提供至少三點詳細建議" }, 
+                    ua: { type: "STRING", description: "提供至少三點詳細建議" }, 
+                    ue: { type: "STRING", description: "提供至少三點詳細建議" },
                     db: { type: "STRING" }, dc: { type: "STRING" }, da: { type: "STRING" }, denv: { type: "STRING" }, devl: { type: "STRING" },
-                    ie: { type: "STRING" }, ic: { type: "STRING" }, ip: { type: "STRING" }, ia: { type: "STRING" }
+                    ie: { type: "STRING", description: "提供多點詳細建議" }, 
+                    ic: { type: "STRING", description: "提供多點詳細建議" }, 
+                    ip: { type: "STRING", description: "提供多點詳細建議" }, 
+                    ia: { type: "STRING", description: "提供多點詳細建議" }
                 }
             };
-            const prompt = `針對「${window.getActualTopic()}」生成極度豐富的建議。IEP 學生為「${document.getElementById('iep-category').value}」，優勢「${document.getElementById('iep-strengths').value}」，弱勢「${document.getElementById('iep-weaknesses').value}」。每個維度至少提供 3 點具體做法。`;
+            const prompt = `針對「${window.getActualTopic()}」生成極度豐富且專業的融合教育建議。IEP 學生為「${document.getElementById('iep-category').value}」，優勢「${document.getElementById('iep-strengths').value}」，弱勢「${document.getElementById('iep-weaknesses').value}」。每個維度（環境、內容、歷程、評量）至少提供 3 到 5 點具體做法與實務情境。`;
             
             const res = await callGemini(prompt, true, schema);
             if(res) {
@@ -743,21 +730,34 @@
                     document.getElementById('btn-tab-iep').classList.toggle('hidden', false);
                 }
                 window.switchTab(wantsUDL ? 'tab-udl' : (wantsDI ? 'tab-di' : 'tab-iep'));
-            } else { alert("AI 處理失敗，請重試。"); }
+                window.showToast("融合建議生成完畢！", "success");
+            } else { 
+                window.showToast("AI 處理失敗，請重試。", "error"); 
+            }
             
             document.getElementById('loading-state').classList.add('hidden');
             document.getElementById('content-views').classList.remove('hidden');
         };
 
+        // ==========================================
+        // Miscellaneous Tools
+        // ==========================================
         window.toggleEditMode = () => {
-            isEditMode = !isEditMode;
-            document.querySelectorAll('.content-text, .editable-cell').forEach(el => el.setAttribute('contenteditable', isEditMode));
-            document.getElementById('btn-edit-mode').innerHTML = isEditMode ? '<i class="fas fa-save"></i> 儲存' : '<i class="fas fa-edit"></i> 編輯';
+            window.isEditMode = !window.isEditMode;
+            document.querySelectorAll('.content-text, .editable-cell').forEach(el => el.setAttribute('contenteditable', window.isEditMode));
+            document.getElementById('btn-edit-mode').innerHTML = window.isEditMode ? '<i class="fas fa-save"></i> 儲存' : '<i class="fas fa-edit"></i> 編輯';
+            if (window.isEditMode) window.showToast("已進入編輯模式，點擊文字即可修改。", "info");
         };
 
         window.toggleExternalLinks = (e) => { e.stopPropagation(); document.getElementById('dropdown-ext-links').classList.toggle('hidden'); };
-        document.addEventListener('click', () => document.getElementById('dropdown-ext-links')?.classList.add('hidden'));
-        window.clearForm = () => location.reload();
+        document.addEventListener('click', () => {
+            const dropdown = document.getElementById('dropdown-ext-links');
+            if (dropdown && !dropdown.classList.contains('hidden')) dropdown.classList.add('hidden');
+        });
+
+        window.clearForm = () => {
+            if(confirm("確定要重置所有輸入嗎？")) location.reload();
+        };
 
         window.downloadCurrentTabAsWord = () => {
             const container = document.getElementById(window.currentActiveTab.replace('tab-', 'render-'));
@@ -766,29 +766,27 @@
             const html = `<html><head><meta charset='utf-8'><style>body{font-family:sans-serif;} table{width:100%;border-collapse:collapse;margin-bottom:20px;} th,td{border:1px solid #000;padding:8px;text-align:left;} th{background-color:#f2f2f2;} h2{font-size:24px;border-bottom:2px solid #000;}</style></head><body>${clone.innerHTML}</body></html>`;
             const link = document.createElement('a'); link.href = URL.createObjectURL(new Blob(['\ufeff', html], { type: 'application/msword' }));
             link.download = `${window.getActualTopic()}.doc`; link.click();
-        };
-        
-        window.loadPlanFromCloud = function(docId) {
-            const plan = window.cachedPlans.find(p => p.id === docId); if(!plan) return;
-            document.getElementById('empty-state').classList.add('hidden'); document.getElementById('content-views').classList.remove('hidden');
-            document.getElementById('tabs-container').classList.remove('hidden'); document.getElementById('toolbar-container').classList.remove('hidden');
-            document.getElementById('stage-2-container').classList.remove('opacity-50', 'pointer-events-none');
-            
-            document.getElementById('render-basic').innerHTML = plan.htmlBasic;
-            document.getElementById('render-udl').innerHTML = plan.htmlUdl;
-            document.getElementById('render-di').innerHTML = plan.htmlDi;
-            document.getElementById('render-iep').innerHTML = plan.htmlIep;
-            
-            document.getElementById('btn-tab-basic').classList.remove('hidden');
-            plan.htmlUdl ? document.getElementById('btn-tab-udl').classList.remove('hidden') : document.getElementById('btn-tab-udl').classList.add('hidden');
-            plan.htmlDi ? document.getElementById('btn-tab-di').classList.remove('hidden') : document.getElementById('btn-tab-di').classList.add('hidden');
-            plan.htmlIep ? document.getElementById('btn-tab-iep').classList.remove('hidden') : document.getElementById('btn-tab-iep').classList.add('hidden');
-            
-            window.closeCloudLibrary(); window.switchTab('tab-basic');
-            window.showToast("教案載入成功！", "success");
-            const sb = document.getElementById('left-sidebar'); if(sb.classList.contains('sidebar-collapsed')) window.toggleSidebar();
+            window.showToast("教案已下載為 Word 檔", "success");
         };
 
+        window.downloadExcelTemplate = () => {
+            const data = [["主題", "學段", "分析", "設計", "發展", "實施", "評鑑"]];
+            const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(data), "範本"); XLSX.writeFile(wb, "備課範本.xlsx");
+        };
+
+        window.importExcel = (e) => {
+            const f = e.target.files[0]; if(!f) return;
+            const reader = new FileReader(); reader.onload = (evt) => {
+                const wb = XLSX.read(new Uint8Array(evt.target.result), {type: 'array'});
+                const row = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header: 1})[1];
+                if(row) {
+                    document.getElementById('course-topic').value = 'custom'; document.getElementById('custom-topic-input').value = row[0] || ''; document.getElementById('custom-topic-input').classList.remove('hidden');
+                    document.getElementById('addie-a').value = row[2] || ''; 
+                    window.showToast("資料匯入成功！", "success");
+                }
+            };
+            reader.readAsArrayBuffer(f);
+        };
     </script>
 </body>
 </html>
