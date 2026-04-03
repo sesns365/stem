@@ -208,7 +208,7 @@
             </div>
 
             <div id="toolbar-container" class="bg-slate-100 border-b border-slate-200 px-6 py-2 flex justify-between items-center shrink-0 hidden z-10">
-                <div class="text-sm text-slate-500 font-medium flex items-center gap-1.5"><i class="fas fa-info-circle text-indigo-500"></i> AI 已生成設計。點擊「編輯」可直接修改文字。</div>
+                <div class="text-sm text-slate-500 font-medium flex items-center gap-1.5"><i class="fas fa-info-circle text-indigo-500"></i> 課程已生成。點擊「編輯」可直接修改文字。</div>
                 <div class="flex gap-2">
                     <button id="btn-edit-mode" onclick="window.toggleEditMode()" class="bg-white border border-slate-300 text-slate-600 px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm flex items-center gap-1"><i class="fas fa-edit"></i> 編輯</button>
                     <button onclick="window.downloadCurrentTabAsWord()" class="bg-slate-800 text-white px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm flex items-center gap-1"><i class="fas fa-file-word"></i> Word</button>
@@ -289,7 +289,7 @@
                 <button onclick="window.closeAddieGuide()" class="text-2xl hover:text-red-200 transition">&times;</button>
             </div>
             <div class="flex-1 p-6 overflow-y-auto space-y-6 bg-slate-50 text-sm leading-relaxed">
-                <p class="text-indigo-800 font-bold border-l-4 border-indigo-500 pl-3">為了讓 AI 幫您生成最精準的 STEM 教案，請在各階段填入以下資訊：</p>
+                <p class="text-indigo-800 font-bold border-l-4 border-indigo-500 pl-3">為了讓 AI 幫您生成最精準的 STEM 課程，請在各階段填入以下資訊：</p>
                 <section class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
                     <h4 class="font-bold text-indigo-700 mb-1 border-b pb-1">1. 分析 (Analyze) —— 誰要學？學什麼？</h4>
                     <p class="mb-2"><strong>老師輸入：</strong>學生年級、起點行為（已經會了什麼）、學習難點（卡在哪裡？）。</p>
@@ -348,7 +348,7 @@
         </div>
     </div>
 
-    <!-- 全部整合到一起的單一 Script (包含 Firebase 與所有邏輯) -->
+    <!-- Firebase SDK Logic -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -410,7 +410,7 @@
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
             const payload = {
                 contents: [{ parts: [{ text: prompt }] }],
-                systemInstruction: { parts: [{ text: "你是一位台灣頂級 STEM 與特教教學設計師。請產出專業、詳實且充滿創意的教案內容。請使用 HTML 標籤排版 (如 <br>, <ul>, <li>)，重點請用 <strong> 加粗，嚴禁使用 Markdown 的 **。UDL 術語請用『多元』。" }] }
+                systemInstruction: { parts: [{ text: "你是一位台灣頂級 STEM 與特教教學設計師。請產出專業、詳實且充滿創意的教案內容。請使用 HTML 標籤排版 (如 <br>, <ul>, <li>)，重點請用 <strong> 加粗，嚴禁使用 Markdown 的 **。UDL 術語請用『多元』。不要輸出包含 ```html 的標記。" }] }
             };
             if(isJSON) payload.generationConfig = { responseMimeType: "application/json", responseSchema: schema };
             
@@ -421,9 +421,18 @@
                 
                 if (isJSON) {
                     let cleanText = text.replace(/```json/gi, '').replace(/```/gi, '').trim();
+                    // Basic safeguard in case AI generated prefix texts like "Here is the JSON:"
+                    const firstBrace = cleanText.indexOf('{');
+                    const lastBrace = cleanText.lastIndexOf('}');
+                    if (firstBrace !== -1 && lastBrace !== -1) {
+                        cleanText = cleanText.substring(firstBrace, lastBrace + 1);
+                    }
                     return JSON.parse(cleanText);
                 } else {
-                    return text.replace(/```html/gi, '').replace(/```/gi, '').trim();
+                    let cleanHtml = text.replace(/```html/gi, '').replace(/```/gi, '').trim();
+                    // Strip common conversational filler texts inserted by AI
+                    cleanHtml = cleanHtml.replace(/^(好的|這是一段|以下是|這是一個|這是修改後).*?[:：\n]/gi, '').trim();
+                    return cleanHtml;
                 }
             } catch (e) { 
                 console.error("API Call Error", e); 
@@ -516,7 +525,7 @@
             };
             try {
                 await setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'lesson_plans', docId), planData);
-                window.showToast("教案已成功同步至雲端！", "success");
+                window.showToast("課程已成功同步至雲端！", "success");
             } catch (e) { window.showToast("儲存失敗，請檢查網路。", "error"); }
         };
 
@@ -536,7 +545,7 @@
                             <h4 class="font-bold text-indigo-800 text-lg line-clamp-1">${d.topic}</h4>
                             <p class="text-xs text-slate-400 mb-4">${new Date(d.timestamp).toLocaleString()}</p>
                             <div class="flex gap-2">
-                                <button onclick="window.loadPlanFromCloud('${d.id}')" class="flex-1 bg-indigo-50 text-indigo-700 py-1.5 rounded-lg text-sm font-bold hover:bg-indigo-600 hover:text-white transition">開啟教案</button>
+                                <button onclick="window.loadPlanFromCloud('${d.id}')" class="flex-1 bg-indigo-50 text-indigo-700 py-1.5 rounded-lg text-sm font-bold hover:bg-indigo-600 hover:text-white transition">開啟檔案</button>
                                 <button onclick="window.deletePlanFromCloud('${d.id}')" class="w-12 bg-red-50 text-red-500 py-1.5 rounded-lg hover:bg-red-500 hover:text-white transition"><i class="fas fa-trash-alt"></i></button>
                             </div>
                         </div>`;
@@ -547,7 +556,7 @@
         };
 
         window.deletePlanFromCloud = async function(docId) {
-            if(!confirm("確定永久刪除此教案嗎？此動作無法復原。")) return;
+            if(!confirm("確定永久刪除此紀錄嗎？此動作無法復原。")) return;
             try {
                 await deleteDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'lesson_plans', docId));
                 window.showToast("已成功刪除雲端紀錄。", "success");
@@ -574,8 +583,8 @@
             plan.htmlIep ? document.getElementById('btn-tab-iep').classList.remove('hidden') : document.getElementById('btn-tab-iep').classList.add('hidden');
             
             window.closeCloudLibrary(); window.switchTab('tab-basic');
-            window.showToast("教案載入成功！", "success");
-            const sb = document.getElementById('left-sidebar'); if(sb.classList.contains('sidebar-collapsed')) window.toggleSidebar();
+            window.showToast("課程載入成功！", "success");
+            const sb = document.getElementById('left-sidebar'); if(!sb.classList.contains('sidebar-collapsed')) window.toggleSidebar();
         };
 
         // ==========================================
@@ -594,7 +603,7 @@
                 properties: {
                     design: { type: "STRING", description: "設計理念，敘述流暢" }, 
                     objectives: { type: "STRING", description: "學習目標 (請使用 ul li 格式列出)" },
-                    act1_title: { type: "STRING" }, act1_steps: { type: "STRING", description: "詳細的教學引導與活動對話" }, act1_eval: { type: "STRING" },
+                    act1_title: { type: "STRING" }, act1_steps: { type: "STRING", description: "詳細的教學引導與活動對話，嚴禁包含 markdown ** 符號" }, act1_eval: { type: "STRING" },
                     act2_A_title: { type: "STRING" }, act2_A_steps: { type: "STRING", description: "數位方案的詳細教學與學生實作步驟" },
                     act2_B_title: { type: "STRING" }, act2_B_steps: { type: "STRING", description: "實作方案的詳細教學與學生實作步驟" },
                     act2_C_title: { type: "STRING" }, act2_C_steps: { type: "STRING", description: "協作方案的詳細教學與學生實作步驟" },
@@ -603,7 +612,7 @@
                 }
             };
             
-            const prompt = `針對「${topic}」深度轉化生成極度詳細的 STEM 教案。分析：${document.getElementById('addie-a').value}。目標：${document.getElementById('addie-d').value}。教材：${document.getElementById('addie-dev').value}。實施方式：${document.getElementById('addie-i').value}。請根據輸入的目標轉化為具體的「學習目標(objectives)」。並一次性生成發展活動的三個方案：A(數位闖關)、B(實體探究)、C(混合協作)。內容必須豐富，包含教師提問與學生預期反應。`;
+            const prompt = `針對「${topic}」深度轉化生成極度詳細的 STEM 課程。分析：${document.getElementById('addie-a').value}。目標：${document.getElementById('addie-d').value}。教材：${document.getElementById('addie-dev').value}。實施方式：${document.getElementById('addie-i').value}。請根據輸入的目標轉化為具體的「學習目標(objectives)」。並一次性生成發展活動的三個方案：A(數位闖關)、B(實體探究)、C(混合協作)。內容必須豐富，包含教師提問與學生預期反應，並加上 <strong> 重點強調。`;
             const res = await callGemini(prompt, true, schema);
 
             if(res) {
@@ -680,14 +689,14 @@
                     ur: { type: "STRING", description: "提供至少三點詳細建議" }, 
                     ua: { type: "STRING", description: "提供至少三點詳細建議" }, 
                     ue: { type: "STRING", description: "提供至少三點詳細建議" },
-                    db: { type: "STRING" }, dc: { type: "STRING" }, da: { type: "STRING" }, denv: { type: "STRING" }, devl: { type: "STRING" },
+                    db: { type: "STRING", description: "詳細具體步驟與做法" }, dc: { type: "STRING", description: "詳細具體步驟與做法" }, da: { type: "STRING", description: "詳細具體步驟與做法" }, denv: { type: "STRING", description: "詳細具體步驟與做法" }, devl: { type: "STRING", description: "詳細具體步驟與做法" },
                     ie: { type: "STRING", description: "提供多點詳細建議" }, 
                     ic: { type: "STRING", description: "提供多點詳細建議" }, 
                     ip: { type: "STRING", description: "提供多點詳細建議" }, 
                     ia: { type: "STRING", description: "提供多點詳細建議" }
                 }
             };
-            const prompt = `針對「${window.getActualTopic()}」生成極度豐富且專業的融合教育建議。IEP 學生為「${document.getElementById('iep-category').value}」，優勢「${document.getElementById('iep-strengths').value}」，弱勢「${document.getElementById('iep-weaknesses').value}」。每個維度（環境、內容、歷程、評量）至少提供 3 到 5 點具體做法與實務情境。`;
+            const prompt = `針對「${window.getActualTopic()}」生成極度豐富且專業的融合教育建議。IEP 學生為「${document.getElementById('iep-category').value}」，優勢「${document.getElementById('iep-strengths').value}」，弱勢「${document.getElementById('iep-weaknesses').value}」。請在每個維度（環境、內容、歷程、評量）及差異化分組（基礎、核心、進階）中，至少提供 3 到 5 點具體做法與實務情境。強烈禁止使用 Markdown 的 ** 符號。`;
             
             const res = await callGemini(prompt, true, schema);
             if(res) {
@@ -695,9 +704,9 @@
                     document.getElementById('render-udl').innerHTML = `
                         <h2 class="text-2xl font-bold text-blue-800 mb-4 border-b pb-2">第一級：UDL 通用設計</h2>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div class="bg-blue-50/50 p-6 rounded-xl border shadow-sm"><h3 class="font-bold text-blue-800 mb-3 text-lg">多元表徵</h3>${safe(res.ur)}</div>
-                            <div class="bg-blue-50/50 p-6 rounded-xl border shadow-sm"><h3 class="font-bold text-blue-800 mb-3 text-lg">多元行動與表達</h3>${safe(res.ua)}</div>
-                            <div class="bg-blue-50/50 p-6 rounded-xl border shadow-sm"><h3 class="font-bold text-blue-800 mb-3 text-lg">多元參與</h3>${safe(res.ue)}</div>
+                            <div class="bg-blue-50/50 p-6 rounded-xl border shadow-sm"><h3 class="font-bold text-blue-800 mb-3 text-lg">多元表徵</h3><div class="text-slate-700 leading-relaxed">${safe(res.ur)}</div></div>
+                            <div class="bg-blue-50/50 p-6 rounded-xl border shadow-sm"><h3 class="font-bold text-blue-800 mb-3 text-lg">多元行動與表達</h3><div class="text-slate-700 leading-relaxed">${safe(res.ua)}</div></div>
+                            <div class="bg-blue-50/50 p-6 rounded-xl border shadow-sm"><h3 class="font-bold text-blue-800 mb-3 text-lg">多元參與</h3><div class="text-slate-700 leading-relaxed">${safe(res.ue)}</div></div>
                         </div>`;
                     document.getElementById('btn-tab-udl').classList.toggle('hidden', false);
                 }
@@ -706,13 +715,13 @@
                         <h2 class="text-2xl font-bold text-emerald-800 mb-4 border-b pb-2">第二級：差異化教學 (DI)</h2>
                         <div class="space-y-6">
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div class="p-5 bg-slate-50 border rounded-xl shadow-sm"><strong class="text-emerald-700 text-lg block mb-2">基礎組任務</strong>${safe(res.db)}</div>
-                                <div class="p-5 bg-emerald-50 border border-emerald-200 rounded-xl shadow-sm"><strong class="text-emerald-800 text-lg block mb-2">核心組任務</strong>${safe(res.dc)}</div>
-                                <div class="p-5 bg-indigo-50 border rounded-xl shadow-sm"><strong class="text-indigo-700 text-lg block mb-2">進階組任務</strong>${safe(res.da)}</div>
+                                <div class="p-5 bg-slate-50 border rounded-xl shadow-sm"><strong class="text-emerald-700 text-lg block mb-2 border-b border-emerald-200 pb-2">基礎組任務</strong><div class="text-slate-700 mt-2">${safe(res.db)}</div></div>
+                                <div class="p-5 bg-emerald-50 border border-emerald-200 rounded-xl shadow-sm"><strong class="text-emerald-800 text-lg block mb-2 border-b border-emerald-200 pb-2">核心組任務</strong><div class="text-slate-700 mt-2">${safe(res.dc)}</div></div>
+                                <div class="p-5 bg-indigo-50 border rounded-xl shadow-sm"><strong class="text-indigo-700 text-lg block mb-2 border-b border-indigo-200 pb-2">進階組任務</strong><div class="text-slate-700 mt-2">${safe(res.da)}</div></div>
                             </div>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div class="p-5 bg-white border rounded-xl shadow-sm"><strong class="text-emerald-700 text-lg block mb-2">環境調整</strong>${safe(res.denv)}</div>
-                                <div class="p-5 bg-white border rounded-xl shadow-sm"><strong class="text-emerald-700 text-lg block mb-2">評量差異</strong>${safe(res.devl)}</div>
+                                <div class="p-5 bg-white border rounded-xl shadow-sm"><strong class="text-emerald-700 text-lg block mb-2">環境調整</strong><div class="text-slate-700">${safe(res.denv)}</div></div>
+                                <div class="p-5 bg-white border rounded-xl shadow-sm"><strong class="text-emerald-700 text-lg block mb-2">評量差異</strong><div class="text-slate-700">${safe(res.devl)}</div></div>
                             </div>
                         </div>`;
                     document.getElementById('btn-tab-di').classList.toggle('hidden', false);
@@ -722,10 +731,10 @@
                         <h2 class="text-2xl font-bold text-amber-800 mb-4 border-b pb-2">第三級：個別化調整 (IEP)</h2>
                         <div class="bg-slate-800 text-white rounded-xl p-5 mb-6 shadow-md"><strong class="text-amber-300">學生特質：</strong>${document.getElementById('iep-category').value} <br> <strong class="text-emerald-300">優勢：</strong>${document.getElementById('iep-strengths').value} | <strong class="text-red-300">弱勢：</strong>${document.getElementById('iep-weaknesses').value}</div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div class="p-5 bg-white border border-amber-200 rounded-xl shadow-sm"><strong class="text-amber-800 text-lg block mb-2">學習環境</strong>${safe(res.ie)}</div>
-                            <div class="p-5 bg-white border border-amber-200 rounded-xl shadow-sm"><strong class="text-amber-800 text-lg block mb-2">學習內容</strong>${safe(res.ic)}</div>
-                            <div class="p-5 bg-white border border-amber-200 rounded-xl shadow-sm"><strong class="text-amber-800 text-lg block mb-2">學習歷程</strong>${safe(res.ip)}</div>
-                            <div class="p-5 bg-white border border-amber-200 rounded-xl shadow-sm"><strong class="text-amber-800 text-lg block mb-2">學習評量</strong>${safe(res.ia)}</div>
+                            <div class="p-5 bg-white border border-amber-200 rounded-xl shadow-sm"><strong class="text-amber-800 text-lg block mb-2 border-b border-amber-100 pb-2">學習環境</strong><div class="text-slate-700 mt-2">${safe(res.ie)}</div></div>
+                            <div class="p-5 bg-white border border-amber-200 rounded-xl shadow-sm"><strong class="text-amber-800 text-lg block mb-2 border-b border-amber-100 pb-2">學習內容</strong><div class="text-slate-700 mt-2">${safe(res.ic)}</div></div>
+                            <div class="p-5 bg-white border border-amber-200 rounded-xl shadow-sm"><strong class="text-amber-800 text-lg block mb-2 border-b border-amber-100 pb-2">學習歷程</strong><div class="text-slate-700 mt-2">${safe(res.ip)}</div></div>
+                            <div class="p-5 bg-white border border-amber-200 rounded-xl shadow-sm"><strong class="text-amber-800 text-lg block mb-2 border-b border-amber-100 pb-2">學習評量</strong><div class="text-slate-700 mt-2">${safe(res.ia)}</div></div>
                         </div>`;
                     document.getElementById('btn-tab-iep').classList.toggle('hidden', false);
                 }
@@ -762,11 +771,10 @@
         window.downloadCurrentTabAsWord = () => {
             const container = document.getElementById(window.currentActiveTab.replace('tab-', 'render-'));
             const clone = container.cloneNode(true);
-            clone.querySelectorAll('.regen-btn, .activity-switcher').forEach(n => n.remove());
             const html = `<html><head><meta charset='utf-8'><style>body{font-family:sans-serif;} table{width:100%;border-collapse:collapse;margin-bottom:20px;} th,td{border:1px solid #000;padding:8px;text-align:left;} th{background-color:#f2f2f2;} h2{font-size:24px;border-bottom:2px solid #000;}</style></head><body>${clone.innerHTML}</body></html>`;
             const link = document.createElement('a'); link.href = URL.createObjectURL(new Blob(['\ufeff', html], { type: 'application/msword' }));
             link.download = `${window.getActualTopic()}.doc`; link.click();
-            window.showToast("教案已下載為 Word 檔", "success");
+            window.showToast("文件已下載為 Word 檔", "success");
         };
 
         window.downloadExcelTemplate = () => {
