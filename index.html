@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-STEM 教師備課助理 </title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .tab-active { border-bottom: 3px solid #4f46e5; color: #4f46e5; font-weight: bold; }
+        .tab-inactive { color: #64748b; font-weight: 500; border-bottom: 3px solid transparent; }
+        .tab-inactive:hover { color: #334155; border-bottom: 3px solid #cbd5e1; }
+
+        .tw-lesson-table { width: 100%; border-collapse: collapse; margin-bottom: 2rem; border: 1px solid #cbd5e1; font-size: 0.875rem; background-color: #fff; }
+        .tw-lesson-table th { background-color: #f8fafc; border: 1px solid #cbd5e1; padding: 12px; text-align: left; font-weight: bold; color: #334155; width: 120px;}
+        .tw-lesson-table td { border: 1px solid #cbd5e1; padding: 12px; color: #475569; position: relative; line-height: 1.6; }
+        .tw-lesson-table ul { margin-left: 1.5rem; list-style-type: disc; margin-top: 0.5rem; }
+        .tw-lesson-table li { margin-bottom: 0.25rem; }
+
+        [contenteditable="true"] { outline: 2px dashed #818cf8; background-color: #fbfbfe; border-radius: 8px; padding: 8px; transition: all 0.2s; display: block; }
+        [contenteditable="true"]:focus { outline: 2px solid #4f46e5; background-color: #fff; }
+
+        .rotate-180 { transform: rotate(180deg); }
+        #left-sidebar { transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); flex-shrink: 0; }
+        .scheme-btn-active { background-color: #4f46e5 !important; color: white !important; border-color: #4338ca !important; }
+        
+        .sidebar-expanded { width: 33.333333%; min-width: 350px; }
+        .sidebar-collapsed { width: 48px; min-width: 48px; }
+
+        /* Toast Notifications */
+        #toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 12px; }
+        .toast { padding: 14px 24px; border-radius: 12px; color: white; font-weight: bold; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 10px; animation: slideIn 0.3s ease-out; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans h-screen flex flex-col overflow-hidden">
+
+    <header class="bg-indigo-700 text-white p-4 shadow-md flex justify-between items-center z-20 shrink-0">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
+                <i class="fas fa-chalkboard-teacher text-2xl text-indigo-100"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold tracking-wider leading-tight">AI-STEM 教師備課助理</h1>
+                <p class="text-indigo-200 text-xs mt-0.5">系統化 ADDIE 模式 ╳ AI 協助備課</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <div class="relative">
+                <button onclick="window.toggleExternalLinks(event)" class="bg-indigo-600 hover:bg-indigo-500 border border-indigo-400 px-3 py-1.5 rounded text-sm font-bold transition flex items-center gap-2 shadow-sm">
+                    <i class="fas fa-external-link-alt"></i> 相關連結
+                </button>
+                <div id="dropdown-ext-links" class="hidden absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-slate-100 z-50 overflow-hidden">
+                    <div class="px-4 py-2 bg-slate-50 border-b border-slate-100 text-xs font-bold text-slate-500">外部教學資源</div>
+                    <a href="https://udlguidelines.cast.org/" target="_blank" class="block px-4 py-3 text-sm text-slate-700 hover:bg-indigo-50 transition border-b border-slate-50">
+                        <i class="fas fa-globe text-indigo-400 w-4 text-center mr-2"></i>CAST UDL 指南
+                    </a>
+                </div>
+            </div>
+            <button onclick="window.openCloudLibrary()" class="bg-indigo-600 hover:bg-indigo-500 border border-indigo-400 px-3 py-1.5 rounded text-sm font-bold transition flex items-center gap-2 shadow-sm">
+                <i class="fas fa-cloud"></i> 我的教案庫
+            </button>
+            <button onclick="window.openSettings()" class="w-8 h-8 bg-indigo-600 hover:bg-indigo-500 rounded-full flex items-center justify-center text-white border border-indigo-400 transition shadow-sm" title="設定 API Key">
+                <i class="fas fa-cog"></i>
+            </button>
+            <div class="w-8 h-8 bg-indigo-500 rounded-full flex items-center justify-center font-bold border-2 border-indigo-300 shadow-inner">T</div>
+        </div>
+    </header>
+
+    <main class="flex-1 flex overflow-hidden">
+        <!-- 左欄：參數輸入區 -->
+        <section id="left-sidebar" class="sidebar-expanded bg-white border-r border-slate-200 flex flex-col shadow-lg z-10 relative">
+            <div class="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center shrink-0">
+                <div id="sidebar-title" class="flex-1 flex justify-between items-center">
+                    <h2 class="font-bold text-lg text-slate-800"><i class="fas fa-sliders-h text-indigo-500 mr-2"></i>教學設計參數</h2>
+                    <button onclick="window.clearForm()" class="text-xs text-slate-400 hover:text-red-500 transition mr-2"><i class="fas fa-sync-alt"></i> 重置</button>
+                </div>
+                <button onclick="window.toggleSidebar()" class="w-8 h-8 bg-white border border-slate-200 rounded-full flex items-center justify-center text-slate-500 hover:bg-indigo-50 transition shadow-sm ml-2">
+                    <i id="sidebar-toggle-icon" class="fas fa-chevron-left"></i>
+                </button>
+            </div>
+            
+            <div id="sidebar-content" class="flex-1 overflow-y-auto p-5 space-y-4 no-scrollbar pb-24">
+                <div class="flex gap-2 mb-2">
+                    <button onclick="window.downloadExcelTemplate()" class="flex-1 bg-emerald-50 border border-emerald-200 text-emerald-700 py-2 rounded-lg text-xs font-bold hover:bg-emerald-100 transition flex items-center justify-center gap-1"><i class="fas fa-file-excel"></i>下載範本</button>
+                    <button onclick="document.getElementById('excel-upload').click()" class="flex-1 bg-indigo-50 border border-indigo-200 text-indigo-700 py-2 rounded-lg text-xs font-bold hover:bg-indigo-100 transition flex items-center justify-center gap-1"><i class="fas fa-file-upload"></i>匯入資料</button>
+                    <input type="file" id="excel-upload" class="hidden" accept=".xlsx, .xls" onchange="window.importExcel(event)">
+                </div>
+
+                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                    <div class="p-4 bg-slate-50 cursor-pointer flex justify-between items-center" onclick="window.toggleAccordion('panel-basic', 'icon-basic')">
+                        <h4 class="font-bold text-slate-700 flex items-center gap-2">領域與學習階段</h4>
+                        <i id="icon-basic" class="fas fa-chevron-up text-slate-400 transition-transform"></i>
+                    </div>
+                    <div id="panel-basic" class="p-4 border-t border-slate-200 space-y-4">
+                        <div>
+                            <label class="block text-sm font-bold text-slate-600 mb-1 flex justify-between items-center">
+                                STEM 課程領域 / 主題
+                                <button onclick="window.openTopicGuide()" class="text-indigo-500 hover:text-indigo-700 text-xs flex items-center gap-1 bg-indigo-50 px-2 py-0.5 rounded-full transition border border-indigo-200 shadow-sm">
+                                    <i class="fas fa-lightbulb"></i> 靈感題庫
+                                </button>
+                            </label>
+                            <select id="course-topic" onchange="window.toggleCustomTopic()" class="w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500 text-slate-700 text-sm mb-2">
+                                <option value="" disabled selected>請選擇領域或主題...</option>
+                                <option value="自然科學領域">自然科學領域</option>
+                                <option value="科技領域">科技領域</option>
+                                <option value="數學領域">數學領域</option>
+                                <option value="跨領域 STEM">跨領域 STEM</option>
+                                <option value="custom">✍️ 自訂主題名稱...</option>
+                            </select>
+                            <input type="text" id="custom-topic-input" class="hidden w-full border border-indigo-300 bg-indigo-50 rounded-lg px-3 py-2 outline-none text-indigo-800 text-sm transition-all" placeholder="例如：能源與動力實驗">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-slate-600 mb-1">適用學習階段</label>
+                            <select id="grade-level" class="w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500 text-slate-700 text-sm">
+                                <option value="" disabled selected>請選擇學段...</option>
+                                <option value="國小低年級">國小第一學習階段</option>
+                                <option value="國小中年級">國小第二學習階段</option>
+                                <option value="國小高年級">國小第三學習階段</option>
+                                <option value="國中階段">國中第四學習階段</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                    <div class="p-4 bg-slate-50 cursor-pointer flex justify-between items-center" onclick="window.toggleAccordion('panel-addie', 'icon-addie')">
+                        <h4 class="font-bold text-slate-700 flex items-center gap-2">
+                            <span class="bg-indigo-100 text-indigo-600 w-6 h-6 rounded-full flex items-center justify-center text-sm">2</span> ADDIE 模式
+                            <i class="fas fa-info-circle text-indigo-400 hover:text-indigo-600 cursor-help" onclick="event.stopPropagation(); window.openAddieGuide();" title="點開看輸入指南"></i>
+                        </h4>
+                        <i id="icon-addie" class="fas fa-chevron-up text-slate-400 transition-transform"></i>
+                    </div>
+                    <div id="panel-addie" class="p-4 border-t border-slate-200 space-y-3 text-sm">
+                        <div>
+                            <label class="block font-bold text-indigo-700 mb-1 flex justify-between">A - 分析 <button onclick="window.openExpandModal('addie-a', '分析 (Analyze)')" class="text-indigo-400 hover:text-indigo-600"><i class="fas fa-expand-arrows-alt"></i></button></label>
+                            <textarea id="addie-a" rows="2" class="w-full border border-slate-200 rounded-lg p-2 outline-none focus:ring-2 focus:ring-indigo-500" placeholder="描述您的學生年齡，及目前遇到的學習困難..."></textarea>
+                        </div>
+                        <div>
+                            <label class="block font-bold text-indigo-700 mb-1 flex justify-between">D - 設計 <button onclick="window.openExpandModal('addie-d', '設計 (Design)')" class="text-indigo-400 hover:text-indigo-600"><i class="fas fa-expand-arrows-alt"></i></button></label>
+                            <textarea id="addie-d" rows="2" class="w-full border border-slate-200 rounded-lg p-2 outline-none focus:ring-2 focus:ring-indigo-500" placeholder="您希望學生學會什麼？如何評量？"></textarea>
+                        </div>
+                        <div>
+                            <label class="block font-bold text-indigo-700 mb-1 flex justify-between">D - 發展 <button onclick="window.openExpandModal('addie-dev', '發展 (Develop)')" class="text-indigo-400 hover:text-indigo-600"><i class="fas fa-expand-arrows-alt"></i></button></label>
+                            <textarea id="addie-dev" rows="2" class="w-full border border-slate-200 rounded-lg p-2 outline-none focus:ring-2 focus:ring-indigo-500" placeholder="打算使用哪些教具、簡報或軟體？"></textarea>
+                        </div>
+                        <div>
+                            <label class="block font-bold text-indigo-700 mb-1 flex justify-between">I - 實施 <button onclick="window.openExpandModal('addie-i', '實施 (Implement)')" class="text-indigo-400 hover:text-indigo-600"><i class="fas fa-expand-arrows-alt"></i></button></label>
+                            <textarea id="addie-i" rows="2" class="w-full border border-slate-200 rounded-lg p-2 outline-none focus:ring-2 focus:ring-indigo-500" placeholder="請簡述您的教學活動步驟..."></textarea>
+                        </div>
+                        <div>
+                            <label class="block font-bold text-indigo-700 mb-1 flex justify-between">E - 評鑑 <button onclick="window.openExpandModal('addie-e', '評鑑 (Evaluate)')" class="text-indigo-400 hover:text-indigo-600"><i class="fas fa-expand-arrows-alt"></i></button></label>
+                            <textarea id="addie-e" rows="2" class="w-full border border-slate-200 rounded-lg p-2 outline-none focus:ring-2 focus:ring-indigo-500" placeholder="如何檢驗成效？"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="window.generateDraft()" id="btn-gen-draft" class="w-full py-3 bg-slate-800 hover:bg-slate-900 text-white rounded-lg font-bold shadow transition flex justify-center items-center gap-2">
+                    <i class="fas fa-magic"></i> 生成 STEM 課程
+                </button>
+
+                <div id="stage-2-container" class="opacity-50 pointer-events-none transition-opacity duration-300">
+                    <div class="border-b-2 border-slate-800 pb-2 mb-2 mt-8"><h3 class="font-black text-slate-800 text-lg">階段二：融合教育參數</h3></div>
+                    
+                    <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mb-4">
+                        <div class="p-4 bg-slate-50 cursor-pointer flex justify-between items-center" onclick="window.toggleAccordion('panel-tier-select', 'icon-tier-select')">
+                            <h4 class="font-bold text-slate-700 flex items-center gap-2">勾選建議層級</h4>
+                            <i id="icon-tier-select" class="fas fa-chevron-up text-slate-400 transition-transform"></i>
+                        </div>
+                        <div id="panel-tier-select" class="p-4 border-t border-slate-200 space-y-2 text-sm font-medium">
+                            <label class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded cursor-pointer"><input type="checkbox" id="chk-udl" class="w-4 h-4 text-emerald-600" checked>第一級：UDL 通用設計</label>
+                            <label class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded cursor-pointer"><input type="checkbox" id="chk-di" class="w-4 h-4 text-emerald-600" checked>第二級：差異化教學 DI</label>
+                            <label class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded cursor-pointer"><input type="checkbox" id="chk-iep" class="w-4 h-4 text-emerald-600" checked onchange="window.toggleIepUI()">第三級：個別調整 IEP</label>
+                        </div>
+                    </div>
+
+                    <div id="iep-details-form" class="bg-amber-50 border border-amber-200 rounded-xl p-4 shadow-sm mb-4">
+                        <h4 class="font-bold text-amber-800 mb-3"><i class="fas fa-user-tag"></i> 學生特質詳細描述</h4>
+                        <div class="space-y-3 text-sm">
+                            <select id="iep-category" class="w-full border border-amber-300 rounded-lg p-2 bg-white">
+                                <option value="學習障礙">學習障礙 (閱讀/書寫/運算困難)</option>
+                                <option value="ADHD">注意力不足過動症 (ADHD)</option>
+                                <option value="ASD">自閉症光譜 (ASD)</option>
+                                <option value="情緒行為障礙">情緒行為障礙</option>
+                            </select>
+                            <textarea id="iep-strengths" rows="2" class="w-full border border-amber-300 rounded-lg p-2" placeholder="優勢能力（如：視覺記憶佳、喜歡操作）..."></textarea>
+                            <textarea id="iep-weaknesses" rows="2" class="w-full border border-amber-300 rounded-lg p-2" placeholder="弱勢與需求（如：無法閱讀長文、注意力短暫）..."></textarea>
+                        </div>
+                    </div>
+                    <button onclick="window.generateSuggestions()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold shadow-md transition flex justify-center items-center gap-2">
+                        <i class="fas fa-brain"></i> 生成三級融合教育建議
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 右欄：展示預覽區 -->
+        <section class="flex-1 flex flex-col bg-slate-50 relative min-w-0">
+            <div id="tabs-container" class="bg-white border-b border-slate-200 px-6 pt-4 flex gap-6 shrink-0 shadow-sm z-10 hidden overflow-x-auto no-scrollbar">
+                <button onclick="window.switchTab('tab-basic')" id="btn-tab-basic" class="pb-3 px-2 tab-active transition-colors flex items-center gap-2 shrink-0"><i class="fas fa-file-alt"></i> STEM 課程</button>
+                <button onclick="window.switchTab('tab-udl')" id="btn-tab-udl" class="pb-3 px-2 tab-inactive transition-colors flex items-center gap-2 hidden shrink-0"><span class="bg-blue-100 text-blue-700 text-xs font-black px-1.5 py-0.5 rounded">1級</span> UDL</button>
+                <button onclick="window.switchTab('tab-di')" id="btn-tab-di" class="pb-3 px-2 tab-inactive transition-colors flex items-center gap-2 hidden shrink-0"><span class="bg-emerald-100 text-emerald-700 text-xs font-black px-1.5 py-0.5 rounded">2級</span> 差異化</button>
+                <button onclick="window.switchTab('tab-iep')" id="btn-tab-iep" class="pb-3 px-2 tab-inactive transition-colors flex items-center gap-2 hidden shrink-0"><span class="bg-amber-100 text-amber-700 text-xs font-black px-1.5 py-0.5 rounded">3級</span> 個別調整</button>
+            </div>
+
+            <div id="toolbar-container" class="bg-slate-100 border-b border-slate-200 px-6 py-2 flex justify-between items-center shrink-0 hidden z-10">
+                <div class="text-sm text-slate-500 font-medium flex items-center gap-1.5"><i class="fas fa-info-circle text-indigo-500"></i> AI 已生成設計。點擊「編輯」可直接修改文字。</div>
+                <div class="flex gap-2">
+                    <button id="btn-edit-mode" onclick="window.toggleEditMode()" class="bg-white border border-slate-300 text-slate-600 px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm flex items-center gap-1"><i class="fas fa-edit"></i> 編輯</button>
+                    <button onclick="window.downloadCurrentTabAsWord()" class="bg-slate-800 text-white px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm flex items-center gap-1"><i class="fas fa-file-word"></i> Word</button>
+                    <button id="btn-save-cloud" onclick="window.saveToCloud()" class="bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm flex items-center gap-1"><i class="fas fa-cloud-upload-alt"></i> 存雲端</button>
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-6 md:p-10 relative no-scrollbar" id="output-container">
+                <div id="empty-state" class="h-full flex flex-col items-center justify-center text-slate-400 fade-in text-center">
+                    <div class="w-24 h-24 bg-slate-200 rounded-full flex items-center justify-center text-4xl mb-4 text-slate-500 shadow-inner"><i class="fas fa-magic"></i></div>
+                    <h3 class="text-xl font-bold text-slate-600 mb-2">準備好體驗 AI 魔法了嗎？</h3>
+                    <p class="text-center max-w-md text-sm">請在左側輸入您的課程設計，點擊「生成 STEM 課程」</p>
+                </div>
+                <div id="loading-state" class="hidden h-full flex flex-col items-center justify-center text-indigo-500 fade-in text-center">
+                    <i class="fas fa-circle-notch fa-spin text-5xl mb-4"></i>
+                    <h3 id="loading-text" class="text-xl font-bold">AI 正在深度思考中...</h3>
+                </div>
+                <div id="content-views" class="hidden h-full relative">
+                    <div id="tab-basic" class="tab-content h-full fade-in pb-10"><div class="bg-white rounded-2xl shadow-md border border-slate-200 p-6 md:p-8 prose max-w-none relative overflow-x-auto" id="render-basic"></div></div>
+                    <div id="tab-udl" class="tab-content hidden h-full fade-in pb-10"><div class="bg-white rounded-2xl shadow-md border-t-4 border-blue-500 p-6 md:p-8 prose max-w-none" id="render-udl"></div></div>
+                    <div id="tab-di" class="tab-content hidden h-full fade-in pb-10"><div class="bg-white rounded-2xl shadow-md border-t-4 border-emerald-500 p-6 md:p-8 prose max-w-none" id="render-di"></div></div>
+                    <div id="tab-iep" class="tab-content hidden h-full fade-in pb-10"><div class="bg-white rounded-2xl shadow-md border-t-4 border-amber-500 p-6 md:p-8 prose max-w-none" id="render-iep"></div></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Toasts container -->
+    <div id="toast-container"></div>
+
+    <!-- Modals -->
+    <!-- Topic Guide Modal (新增：主題靈感庫) -->
+    <div id="topic-guide-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl h-[80vh] flex flex-col overflow-hidden">
+            <div class="p-5 bg-indigo-600 text-white flex justify-between items-center shrink-0 shadow-lg">
+                <h3 class="font-bold text-xl"><i class="fas fa-lightbulb mr-2"></i>STEM 主題靈感庫</h3>
+                <button onclick="window.closeTopicGuide()" class="text-2xl hover:text-red-200 transition">&times;</button>
+            </div>
+            <div class="flex-1 p-6 overflow-y-auto space-y-6 bg-slate-50">
+                <p class="text-slate-600 text-sm">點擊下方按鈕，可直接將該主題帶入您的自訂主題欄位中：</p>
+                
+                <div>
+                    <h5 class="font-bold text-emerald-700 mb-3"><i class="fas fa-leaf mr-2"></i>綠色能源與永續發展</h5>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="window.selectSuggestedTopic('風力發電機設計')" class="px-3 py-1.5 bg-white border border-emerald-200 text-emerald-700 rounded-lg text-sm font-bold shadow-sm hover:bg-emerald-600 hover:text-white transition">風力發電機設計</button>
+                        <button onclick="window.selectSuggestedTopic('太陽能動力車')" class="px-3 py-1.5 bg-white border border-emerald-200 text-emerald-700 rounded-lg text-sm font-bold shadow-sm hover:bg-emerald-600 hover:text-white transition">太陽能動力車</button>
+                        <button onclick="window.selectSuggestedTopic('淨水器與水資源過濾')" class="px-3 py-1.5 bg-white border border-emerald-200 text-emerald-700 rounded-lg text-sm font-bold shadow-sm hover:bg-emerald-600 hover:text-white transition">淨水器與水資源過濾</button>
+                        <button onclick="window.selectSuggestedTopic('綠建築與節能隔熱')" class="px-3 py-1.5 bg-white border border-emerald-200 text-emerald-700 rounded-lg text-sm font-bold shadow-sm hover:bg-emerald-600 hover:text-white transition">綠建築與節能隔熱</button>
+                    </div>
+                </div>
+
+                <div>
+                    <h5 class="font-bold text-blue-700 mb-3"><i class="fas fa-robot mr-2"></i>機器人、程式與物聯網</h5>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="window.selectSuggestedTopic('仿生機械獸/自走車')" class="px-3 py-1.5 bg-white border border-blue-200 text-blue-700 rounded-lg text-sm font-bold shadow-sm hover:bg-blue-600 hover:text-white transition">仿生機械獸/自走車</button>
+                        <button onclick="window.selectSuggestedTopic('智慧植栽自動澆水系統')" class="px-3 py-1.5 bg-white border border-blue-200 text-blue-700 rounded-lg text-sm font-bold shadow-sm hover:bg-blue-600 hover:text-white transition">智慧植栽自動澆水系統</button>
+                        <button onclick="window.selectSuggestedTopic('防盜雷射警報器')" class="px-3 py-1.5 bg-white border border-blue-200 text-blue-700 rounded-lg text-sm font-bold shadow-sm hover:bg-blue-600 hover:text-white transition">防盜雷射警報器</button>
+                        <button onclick="window.selectSuggestedTopic('互動式交通號誌')" class="px-3 py-1.5 bg-white border border-blue-200 text-blue-700 rounded-lg text-sm font-bold shadow-sm hover:bg-blue-600 hover:text-white transition">互動式交通號誌</button>
+                    </div>
+                </div>
+
+                <div>
+                    <h5 class="font-bold text-amber-700 mb-3"><i class="fas fa-building mr-2"></i>結構工程與力學</h5>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="window.selectSuggestedTopic('橋樑承重挑戰')" class="px-3 py-1.5 bg-white border border-amber-200 text-amber-700 rounded-lg text-sm font-bold shadow-sm hover:bg-amber-600 hover:text-white transition">橋樑承重挑戰</button>
+                        <button onclick="window.selectSuggestedTopic('投石車與槓桿原理')" class="px-3 py-1.5 bg-white border border-amber-200 text-amber-700 rounded-lg text-sm font-bold shadow-sm hover:bg-amber-600 hover:text-white transition">投石車與槓桿原理</button>
+                        <button onclick="window.selectSuggestedTopic('耐震建築結構')" class="px-3 py-1.5 bg-white border border-amber-200 text-amber-700 rounded-lg text-sm font-bold shadow-sm hover:bg-amber-600 hover:text-white transition">耐震建築結構</button>
+                        <button onclick="window.selectSuggestedTopic('液壓機械手臂')" class="px-3 py-1.5 bg-white border border-amber-200 text-amber-700 rounded-lg text-sm font-bold shadow-sm hover:bg-amber-600 hover:text-white transition">液壓機械手臂</button>
+                    </div>
+                </div>
+
+                <div>
+                    <h5 class="font-bold text-purple-700 mb-3"><i class="fas fa-rocket mr-2"></i>太空探索與飛行科技</h5>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="window.selectSuggestedTopic('水火箭/氣火箭設計')" class="px-3 py-1.5 bg-white border border-purple-200 text-purple-700 rounded-lg text-sm font-bold shadow-sm hover:bg-purple-600 hover:text-white transition">水火箭/氣火箭設計</button>
+                        <button onclick="window.selectSuggestedTopic('安全降落艙(雞蛋護送)')" class="px-3 py-1.5 bg-white border border-purple-200 text-purple-700 rounded-lg text-sm font-bold shadow-sm hover:bg-purple-600 hover:text-white transition">安全降落艙(雞蛋護送)</button>
+                        <button onclick="window.selectSuggestedTopic('滑翔翼與空氣動力學')" class="px-3 py-1.5 bg-white border border-purple-200 text-purple-700 rounded-lg text-sm font-bold shadow-sm hover:bg-purple-600 hover:text-white transition">滑翔翼與空氣動力學</button>
+                    </div>
+                </div>
+            </div>
+            <div class="p-4 border-t bg-white flex justify-end">
+                <button onclick="window.closeTopicGuide()" class="px-8 py-2 bg-slate-200 text-slate-700 font-bold rounded-lg shadow-sm hover:bg-slate-300 transition">關閉</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADDIE Guide Modal -->
+    <div id="addie-guide-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl h-[85vh] flex flex-col overflow-hidden">
+            <div class="p-5 bg-indigo-600 text-white flex justify-between items-center shrink-0 shadow-lg">
+                <h3 class="font-bold text-xl"><i class="fas fa-info-circle mr-2"></i>ADDIE 模式：輸入指南</h3>
+                <button onclick="window.closeAddieGuide()" class="text-2xl hover:text-red-200 transition">&times;</button>
+            </div>
+            <div class="flex-1 p-6 overflow-y-auto space-y-6 bg-slate-50 text-sm leading-relaxed">
+                <p class="text-indigo-800 font-bold border-l-4 border-indigo-500 pl-3">為了讓 AI 幫您生成最精準的 STEM 教案，請在各階段填入以下資訊：</p>
+                <section class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <h4 class="font-bold text-indigo-700 mb-1 border-b pb-1">1. 分析 (Analyze) —— 誰要學？學什麼？</h4>
+                    <p class="mb-2"><strong>老師輸入：</strong>學生年級、起點行為（已經會了什麼）、學習難點（卡在哪裡？）。</p>
+                    <div class="bg-indigo-50 p-2 rounded italic text-indigo-600">範例：「三年級學生，已經認識電路圖，但不知道什麼是導體與絕緣體。」</div>
+                </section>
+                <section class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <h4 class="font-bold text-indigo-700 mb-1 border-b pb-1">2. 設計 (Design) —— 目標是什麼？</h4>
+                    <p class="mb-2"><strong>老師輸入：</strong>學習目標（看完這門課要學會什麼）、評量方式（怎麼知道他學會了？）。</p>
+                    <div class="bg-indigo-50 p-2 rounded italic text-indigo-600">範例：「目標是能動手做出一個會發亮的賀卡。評量方式是觀察電路是否成功接通。」</div>
+                </section>
+                <section class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <h4 class="font-bold text-indigo-700 mb-1 border-b pb-1">3. 發展 (Develop) —— 需要什麼道具？</h4>
+                    <p class="mb-2"><strong>老師輸入：</strong>教材類型、硬體設備、需要的軟體或教具。</p>
+                    <div class="bg-indigo-50 p-2 rounded italic text-indigo-600">範例：「需要銅箔膠帶、LED 燈、鈕扣電池、彩色卡紙。另外需要一段解說電路的 3 分鐘影片。」</div>
+                </section>
+                <section class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <h4 class="font-bold text-indigo-700 mb-1 border-b pb-1">4. 實施 (Implement) —— 課堂怎麼帶？</h4>
+                    <p class="mb-2"><strong>老師輸入：</strong>教學流程簡述（先做什麼、再做什麼）、預期遇到的問題。</p>
+                    <div class="bg-indigo-50 p-2 rounded italic text-indigo-600">範例：「先由老師示範，再讓學生分組實作。學生可能會把正負極接反，需要老師巡視輔助。」</div>
+                </section>
+                <section class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <h4 class="font-bold text-indigo-700 mb-1 border-b pb-1">5. 評鑑 (Evaluate) —— 效果好嗎？</h4>
+                    <p class="mb-2"><strong>老師輸入：</strong>課後回饋、學生表現觀察、未來優化方向。</p>
+                    <div class="bg-indigo-50 p-2 rounded italic text-indigo-600">範例：「多數學生都能完成，但有一半的人反應膠帶很難撕，下次考慮改用導電筆。」</div>
+                </section>
+            </div>
+            <div class="p-4 border-t bg-white flex justify-end">
+                <button onclick="window.closeAddieGuide()" class="px-8 py-2 bg-indigo-600 text-white font-bold rounded-lg shadow hover:bg-indigo-700 transition">我理解了</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Expand Modal -->
+    <div id="expand-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl h-[70vh] flex flex-col overflow-hidden">
+            <div class="p-4 border-b flex justify-between bg-slate-50 shadow-sm">
+                <h3 id="expand-modal-title" class="font-bold text-xl text-indigo-800 flex items-center gap-2">編輯內容</h3>
+                <button onclick="window.closeExpandModal()" class="text-2xl hover:text-red-500 transition">&times;</button>
+            </div>
+            <textarea id="expand-modal-textarea" class="flex-1 p-6 outline-none resize-none bg-white leading-relaxed text-lg"></textarea>
+            <div class="p-4 border-t flex justify-end gap-2 bg-slate-50">
+                <button onclick="window.closeExpandModal()" class="px-6 py-2 bg-slate-200 rounded text-slate-700 font-bold hover:bg-slate-300">取消</button>
+                <button onclick="window.saveExpandModal()" class="px-6 py-2 bg-indigo-600 text-white rounded font-bold shadow hover:bg-indigo-700 transition">儲存變更</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cloud Library Modal -->
+    <div id="library-modal" class="hidden fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl h-[80vh] flex flex-col overflow-hidden">
+            <div class="p-5 bg-indigo-600 text-white flex justify-between items-center shadow-lg">
+                <h3 class="font-bold text-xl flex items-center gap-2"><i class="fas fa-cloud mr-1"></i> 雲端教案庫</h3>
+                <button onclick="window.closeCloudLibrary()" class="text-2xl hover:text-indigo-200 transition">&times;</button>
+            </div>
+            <div class="flex-1 p-6 overflow-y-auto bg-slate-50" id="library-content"></div>
+        </div>
+    </div>
+
+    <!-- Settings Modal (API Key 設定) -->
+    <div id="settings-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col overflow-hidden">
+            <div class="p-5 bg-slate-800 text-white flex justify-between items-center shadow-lg">
+                <h3 class="font-bold text-lg"><i class="fas fa-cog mr-2"></i>系統設定</h3>
+                <button onclick="window.closeSettings()" class="text-2xl hover:text-slate-300 transition">&times;</button>
+            </div>
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-2">Google Gemini API Key <span class="text-red-500">*</span></label>
+                    <input type="password" id="api-key-input" class="w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-sm" placeholder="AIzaSy...">
+                    <p class="text-xs text-slate-500 mt-2">
+                        由於您已部署至外部平台，請輸入您自己的 Gemini API 金鑰。該金鑰僅會保存在您的瀏覽器 (Local Storage) 中，不會上傳至任何伺服器。
+                    </p>
+                    <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-xs text-indigo-500 hover:text-indigo-700 font-bold mt-2 inline-block"><i class="fas fa-external-link-alt mr-1"></i>點此前往 Google AI Studio 申請免費金鑰</a>
+                </div>
+            </div>
+            <div class="p-4 border-t bg-slate-50 flex justify-end gap-2">
+                <button onclick="window.closeSettings()" class="px-4 py-2 bg-slate-200 text-slate-700 font-bold rounded-lg hover:bg-slate-300 transition">取消</button>
+                <button onclick="window.saveSettings()" class="px-4 py-2 bg-indigo-600 text-white font-bold rounded-lg shadow hover:bg-indigo-700 transition">儲存設定</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDocs, deleteDoc, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        let app, auth, db, currentUser = null;
+        try { app = initializeApp(firebaseConfig); auth = getAuth(app); db = getFirestore(app); } catch(e) {}
+
+        if(auth) {
+            (async () => {
+                try { await signInAnonymously(auth); } catch(e) { console.error(e); }
+                onAuthStateChanged(auth, user => { currentUser = user; });
+            })();
+        }
+
+        window.showToast = (msg, type = "info") => {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast fade-in ${type === 'success' ? 'bg-emerald-500' : type === 'error' ? 'bg-red-500' : 'bg-indigo-600'}`;
+            const icon = type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle';
+            toast.innerHTML = `<i class="fas fa-${icon}"></i> <span>${msg}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateX(50px)'; toast.style.transition = 'all 0.4s'; setTimeout(() => toast.remove(), 400); }, 3500);
+        };
+
+        window.saveToCloud = async function() {
+            if (!currentUser) return window.showToast("連線中，請稍後重試...", "info");
+            const docId = Date.now().toString();
+            const planData = {
+                id: docId, topic: window.getActualTopic(), grade: document.getElementById('grade-level').value,
+                htmlBasic: document.getElementById('render-basic').innerHTML,
+                htmlUdl: document.getElementById('render-udl').innerHTML,
+                htmlDi: document.getElementById('render-di').innerHTML,
+                htmlIep: document.getElementById('render-iep').innerHTML,
+                timestamp: new Date().toISOString()
+            };
+            try {
+                await setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'lesson_plans', docId), planData);
+                window.showToast("教案已成功同步至雲端！", "success");
+            } catch (e) { window.showToast("儲存失敗，請檢查網路。", "error"); }
+        };
+
+        window.openCloudLibrary = async function() {
+            document.getElementById('library-modal').classList.remove('hidden');
+            const container = document.getElementById('library-content');
+            if (!currentUser) { container.innerHTML = '<div class="text-center py-10">連線異常。</div>'; return; }
+            container.innerHTML = '<div class="text-center py-10 font-bold text-indigo-500"><i class="fas fa-sync fa-spin mr-2"></i>同步雲端檔案中...</div>';
+            try {
+                const snap = await getDocs(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'lesson_plans'));
+                if (snap.empty) { container.innerHTML = '<div class="text-center py-10 text-slate-400">目前雲端沒有任何存檔。</div>'; return; }
+                let html = '<div class="grid grid-cols-1 md:grid-cols-2 gap-4">';
+                snap.forEach(docSnap => {
+                    const d = docSnap.data();
+                    html += `
+                        <div class="bg-white border rounded-xl p-5 shadow-sm hover:shadow-md transition">
+                            <h4 class="font-bold text-indigo-800 text-lg line-clamp-1">${d.topic}</h4>
+                            <p class="text-xs text-slate-400 mb-4">${new Date(d.timestamp).toLocaleString()}</p>
+                            <div class="flex gap-2">
+                                <button onclick="window.loadPlanFromCloud('${d.id}')" class="flex-1 bg-indigo-50 text-indigo-700 py-2 rounded-lg text-sm font-bold hover:bg-indigo-600 hover:text-white transition">開啟教案</button>
+                                <button onclick="window.deletePlanFromCloud('${d.id}')" class="w-12 bg-red-50 text-red-500 py-2 rounded-lg hover:bg-red-500 hover:text-white transition"><i class="fas fa-trash-alt"></i></button>
+                            </div>
+                        </div>`;
+                });
+                container.innerHTML = html + '</div>';
+                window.cachedPlans = snap.docs.map(d => d.data());
+            } catch (e) { container.innerHTML = '載入錯誤。'; }
+        };
+
+        window.deletePlanFromCloud = async function(docId) {
+            if(!confirm("確定永久刪除此教案嗎？此動作無法復原。")) return;
+            try {
+                await deleteDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'lesson_plans', docId));
+                window.showToast("已成功刪除雲端紀錄。", "success");
+                window.openCloudLibrary(); 
+            } catch (e) { window.showToast("刪除失敗。", "error"); }
+        };
+        window.closeCloudLibrary = () => document.getElementById('library-modal').classList.add('hidden');
+    </script>
+
+    <!-- App UI & AI Core Interaction -->
+    <script>
+        let isEditMode = false;
+        
+        // 取得 API Key (優先從 localStorage 讀取)
+        window.getApiKey = () => {
+            const storedKey = localStorage.getItem('gemini_api_key');
+            if (storedKey) return storedKey;
+            const defaultKey = ""; 
+            return defaultKey || null;
+        };
+
+        // 開關設定面板
+        window.openSettings = () => {
+            document.getElementById('api-key-input').value = localStorage.getItem('gemini_api_key') || "";
+            document.getElementById('settings-modal').classList.remove('hidden');
+        };
+        window.closeSettings = () => document.getElementById('settings-modal').classList.add('hidden');
+        
+        // 儲存設定
+        window.saveSettings = () => {
+            const key = document.getElementById('api-key-input').value.trim();
+            if (key) {
+                localStorage.setItem('gemini_api_key', key);
+                window.showToast("API Key 已儲存至您的瀏覽器！", "success");
+            } else {
+                localStorage.removeItem('gemini_api_key');
+                window.showToast("API Key 已清除。", "info");
+            }
+            window.closeSettings();
+        };
+
+        let preGeneratedActivities = {};
+        
+        const safe = (v) => (v === undefined || v === null || v === "") ? "AI 尚在規劃具體情境與步驟..." : v;
+
+        async function callGemini(prompt, isJSON = false, schema = null) {
+            const currentApiKey = window.getApiKey();
+            if (!currentApiKey) {
+                window.showToast("請先點擊右上角 ⚙️ 設定您的 Gemini API Key", "error");
+                document.getElementById('loading-state')?.classList.add('hidden');
+                document.getElementById('empty-state')?.classList.remove('hidden');
+                window.openSettings();
+                return null;
+            }
+
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${currentApiKey}`;
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }],
+                systemInstruction: { parts: [{ text: "你是一位台灣頂級 STEM 與特教教學設計師。請產出專業、詳實且充滿創意的教案內容。使用 HTML 片段回傳，重點請用 <strong> 標籤加粗。UDL 術語請用『多元』。" }] }
+            };
+            if(isJSON) payload.generationConfig = { responseMimeType: "application/json", responseSchema: schema };
+            try {
+                const res = await fetch(url, { method: 'POST', body: JSON.stringify(payload) });
+                const data = await res.json();
+                const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                if(!text) return null;
+                return isJSON ? JSON.parse(text) : text.replace(/```html/g, '').replace(/```/g, '').trim();
+            } catch (e) { console.error("API Call Error", e); return null; }
+        }
+
+        window.toggleSidebar = () => {
+            const sb = document.getElementById('left-sidebar');
+            const icon = document.getElementById('sidebar-toggle-icon');
+            const isSmall = sb.classList.contains('sidebar-collapsed');
+            sb.classList.toggle('sidebar-collapsed', !isSmall);
+            sb.classList.toggle('sidebar-expanded', isSmall);
+            document.getElementById('sidebar-content').classList.toggle('hidden', !isSmall);
+            document.getElementById('sidebar-title').classList.toggle('hidden', !isSmall);
+            icon.classList.replace(isSmall ? 'fa-chevron-right' : 'fa-chevron-left', isSmall ? 'fa-chevron-left' : 'fa-chevron-right');
+        };
+
+        window.toggleAccordion = (pId, iId) => {
+            const p = document.getElementById(pId);
+            p.classList.toggle('hidden');
+            document.getElementById(iId).classList.toggle('rotate-180');
+        };
+
+        window.toggleCustomTopic = () => {
+            const s = document.getElementById('course-topic');
+            const i = document.getElementById('custom-topic-input');
+            s.value === 'custom' ? (i.classList.remove('hidden'), i.focus()) : i.classList.add('hidden');
+        };
+
+        window.getActualTopic = () => {
+            const s = document.getElementById('course-topic');
+            return s.value === 'custom' ? (document.getElementById('custom-topic-input').value || '未命名主題') : s.value;
+        };
+
+        // 開啟/關閉 靈感主題庫
+        window.openTopicGuide = () => document.getElementById('topic-guide-modal').classList.remove('hidden');
+        window.closeTopicGuide = () => document.getElementById('topic-guide-modal').classList.add('hidden');
+
+        // 將選擇的主題填入自訂欄位
+        window.selectSuggestedTopic = (topicName) => {
+            const select = document.getElementById('course-topic');
+            const input = document.getElementById('custom-topic-input');
+            select.value = 'custom';
+            input.value = topicName;
+            input.classList.remove('hidden');
+            window.closeTopicGuide();
+            window.showToast(`已套用主題：${topicName}`, 'info');
+        };
+
+        window.openAddieGuide = () => document.getElementById('addie-guide-modal').classList.remove('hidden');
+        window.closeAddieGuide = () => document.getElementById('addie-guide-modal').classList.add('hidden');
+
+        window.openExpandModal = (tid, title) => {
+            window.currentExpandTargetId = tid;
+            document.getElementById('expand-modal-title').innerText = "編輯：" + title;
+            document.getElementById('expand-modal-textarea').value = document.getElementById(tid).value;
+            document.getElementById('expand-modal').classList.remove('hidden');
+        };
+        window.closeExpandModal = () => document.getElementById('expand-modal').classList.add('hidden');
+        window.saveExpandModal = () => {
+            if(window.currentExpandTargetId) document.getElementById(window.currentExpandTargetId).value = document.getElementById('expand-modal-textarea').value;
+            window.closeExpandModal();
+        };
+
+        window.switchTab = (tid) => {
+            ['tab-basic', 'tab-udl', 'tab-di', 'tab-iep'].forEach(id => {
+                document.getElementById(`btn-${id}`)?.classList.toggle('tab-active', id === tid);
+                document.getElementById(`btn-${id}`)?.classList.toggle('tab-inactive', id !== tid);
+                document.getElementById(id)?.classList.toggle('hidden', id !== tid);
+            });
+            window.currentActiveTab = tid;
+        };
+
+        window.toggleIepUI = () => document.getElementById('stage-2-container').classList.toggle('opacity-50', !document.getElementById('chk-iep').checked);
+
+        // Core Generation - 教案
+        window.generateDraft = async () => {
+            const topic = window.getActualTopic();
+            if(!topic || !document.getElementById('grade-level').value) return alert("請選擇主題與學段！");
+            
+            document.getElementById('empty-state').classList.add('hidden');
+            document.getElementById('content-views').classList.add('hidden');
+            document.getElementById('loading-state').classList.remove('hidden');
+
+            const schema = {
+                type: "OBJECT",
+                properties: {
+                    design: { type: "STRING", description: "設計理念，敘述流暢" }, 
+                    objectives: { type: "STRING", description: "學習目標 (ul li 格式)" },
+                    act1_title: { type: "STRING" }, act1_steps: { type: "STRING" }, act1_eval: { type: "STRING" },
+                    act2_A_title: { type: "STRING" }, act2_A_steps: { type: "STRING" },
+                    act2_B_title: { type: "STRING" }, act2_B_steps: { type: "STRING" },
+                    act2_C_title: { type: "STRING" }, act2_C_steps: { type: "STRING" },
+                    act2_eval: { type: "STRING" },
+                    act3_title: { type: "STRING" }, act3_steps: { type: "STRING" }, act3_eval: { type: "STRING" }
+                }
+            };
+            const prompt = `針對「${topic}」深度轉化生成極度詳細的 STEM 教案。分析：${document.getElementById('addie-a').value}。目標：${document.getElementById('addie-d').value}。教材：${document.getElementById('addie-dev').value}。包含教師對話引導、學生活動細節。請根據輸入的目標轉化為具體的「學習目標(objectives)」。一次性生成發展活動的三個方案：A(數位闖關)、B(實體探究)、C(混合協作)。`;
+            const res = await callGemini(prompt, true, schema);
+
+            if(res) {
+                preGeneratedActivities = { 
+                    "活動一": `<strong class="text-indigo-800 text-lg">活動一 (數位)：${safe(res.act2_A_title)}</strong><br><br>${safe(res.act2_A_steps)}`, 
+                    "活動二": `<strong class="text-indigo-800 text-lg">活動二 (實作)：${safe(res.act2_B_title)}</strong><br><br>${safe(res.act2_B_steps)}`, 
+                    "活動三": `<strong class="text-indigo-800 text-lg">活動三 (協作)：${safe(res.act2_C_title)}</strong><br><br>${safe(res.act2_C_steps)}` 
+                };
+
+                document.getElementById('render-basic').innerHTML = `
+                    <div class="text-center mb-6"><h2 class="text-3xl font-black">${topic} 教學設計</h2></div>
+                    <table class="tw-lesson-table"><tbody>
+                        <tr><th>設計理念</th><td colspan="3" class="content-text">${safe(res.design)}</td></tr>
+                        <tr><th>學習目標</th><td colspan="3" id="sec-objectives">
+                            <div class="content-text">${safe(res.objectives)}</div>
+                        </td></tr>
+                    </tbody></table>
+                    <h3 class="text-xl font-bold border-l-4 border-indigo-500 pl-3 mb-4">詳細流程</h3>
+                    <table class="tw-lesson-table"><thead><tr class="bg-slate-50"><th>階段</th><th>任務與教學細節</th><th>評量</th></tr></thead>
+                    <tbody>
+                        <tr><td class="font-bold text-center">引起動機<br><span class="text-xs font-normal">10 min</span></td><td id="sec-act1">
+                            <div class="content-text"><strong class="text-indigo-800 text-lg">引導：${safe(res.act1_title)}</strong><br><br>${safe(res.act1_steps)}</div>
+                        </td><td class="text-center">${safe(res.act1_eval)}</td></tr>
+                        
+                        <tr><td class="font-bold text-center">發展活動<br><span class="text-xs font-normal">20 min</span></td><td id="sec-act2">
+                            <div class="flex gap-2 mb-4">
+                                <button onclick="window.changeScheme(this, '活動一')" class="scheme-btn bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg text-xs font-bold border border-transparent transition scheme-btn-active">活動一 (數位)</button>
+                                <button onclick="window.changeScheme(this, '活動二')" class="scheme-btn bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg text-xs font-bold border border-transparent transition">活動二 (實作)</button>
+                                <button onclick="window.changeScheme(this, '活動三')" class="scheme-btn bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg text-xs font-bold border border-transparent transition">活動三 (協作)</button>
+                            </div>
+                            <div id="act2-content" class="content-text">${preGeneratedActivities["活動一"]}</div>
+                        </td><td class="text-center">${safe(res.act2_eval)}</td></tr>
+                        
+                        <tr><td class="font-bold text-center">綜合活動<br><span class="text-xs font-normal">10 min</span></td><td id="sec-act3">
+                            <div class="content-text"><strong class="text-indigo-800 text-lg">總結：${safe(res.act3_title)}</strong><br><br>${safe(res.act3_steps)}</div>
+                        </td><td class="text-center">${safe(res.act3_eval)}</td></tr>
+                    </tbody></table>`;
+                
+                document.getElementById('loading-state').classList.add('hidden');
+                document.getElementById('content-views').classList.remove('hidden');
+                document.getElementById('tabs-container').classList.remove('hidden');
+                document.getElementById('toolbar-container').classList.remove('hidden');
+                document.getElementById('stage-2-container').classList.remove('opacity-50', 'pointer-events-none');
+                window.switchTab('tab-basic');
+                
+                const sb = document.getElementById('left-sidebar');
+                if(!sb.classList.contains('sidebar-collapsed')) window.toggleSidebar();
+            } else { alert("AI 忙碌中..."); document.getElementById('loading-state').classList.add('hidden'); }
+        };
+
+        window.changeScheme = (btn, scheme) => {
+            document.querySelectorAll('.scheme-btn').forEach(b => b.classList.remove('scheme-btn-active'));
+            btn.classList.add('scheme-btn-active');
+            document.getElementById('act2-content').innerHTML = preGeneratedActivities[scheme] || "載入失敗";
+        };
+
+        // Core Generation - 三級建議
+        window.generateSuggestions = async () => {
+            const wantsUDL = document.getElementById('chk-udl').checked;
+            const wantsDI = document.getElementById('chk-di').checked;
+            const wantsIEP = document.getElementById('chk-iep').checked;
+            
+            if(!wantsUDL && !wantsDI && !wantsIEP) return alert("請至少勾選一個層級！");
+
+            document.getElementById('content-views').classList.add('hidden');
+            document.getElementById('loading-state').classList.remove('hidden');
+            
+            const schema = {
+                type: "OBJECT",
+                properties: {
+                    ur: { type: "STRING" }, ua: { type: "STRING" }, ue: { type: "STRING" },
+                    db: { type: "STRING" }, dc: { type: "STRING" }, da: { type: "STRING" }, denv: { type: "STRING" }, devl: { type: "STRING" },
+                    ie: { type: "STRING" }, ic: { type: "STRING" }, ip: { type: "STRING" }, ia: { type: "STRING" }
+                }
+            };
+            const prompt = `針對「${window.getActualTopic()}」生成極度豐富的建議。IEP 學生為「${document.getElementById('iep-category').value}」，優勢「${document.getElementById('iep-strengths').value}」，弱勢「${document.getElementById('iep-weaknesses').value}」。每個維度至少提供 3 點具體做法。`;
+            
+            const res = await callGemini(prompt, true, schema);
+            if(res) {
+                if(wantsUDL) {
+                    document.getElementById('render-udl').innerHTML = `
+                        <h2 class="text-2xl font-bold text-blue-800 mb-4 border-b pb-2">第一級：UDL 通用設計</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div class="bg-blue-50/50 p-6 rounded-xl border shadow-sm"><h3 class="font-bold text-blue-800 mb-3 text-lg">多元表徵</h3>${safe(res.ur)}</div>
+                            <div class="bg-blue-50/50 p-6 rounded-xl border shadow-sm"><h3 class="font-bold text-blue-800 mb-3 text-lg">多元行動與表達</h3>${safe(res.ua)}</div>
+                            <div class="bg-blue-50/50 p-6 rounded-xl border shadow-sm"><h3 class="font-bold text-blue-800 mb-3 text-lg">多元參與</h3>${safe(res.ue)}</div>
+                        </div>`;
+                    document.getElementById('btn-tab-udl').classList.toggle('hidden', false);
+                }
+                if(wantsDI) {
+                    document.getElementById('render-di').innerHTML = `
+                        <h2 class="text-2xl font-bold text-emerald-800 mb-4 border-b pb-2">第二級：差異化教學 (DI)</h2>
+                        <div class="space-y-6">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div class="p-5 bg-slate-50 border rounded-xl shadow-sm"><strong class="text-emerald-700 text-lg block mb-2">基礎組任務</strong>${safe(res.db)}</div>
+                                <div class="p-5 bg-emerald-50 border border-emerald-200 rounded-xl shadow-sm"><strong class="text-emerald-800 text-lg block mb-2">核心組任務</strong>${safe(res.dc)}</div>
+                                <div class="p-5 bg-indigo-50 border rounded-xl shadow-sm"><strong class="text-indigo-700 text-lg block mb-2">進階組任務</strong>${safe(res.da)}</div>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="p-5 bg-white border rounded-xl shadow-sm"><strong class="text-emerald-700 text-lg block mb-2">環境調整</strong>${safe(res.denv)}</div>
+                                <div class="p-5 bg-white border rounded-xl shadow-sm"><strong class="text-emerald-700 text-lg block mb-2">評量差異</strong>${safe(res.devl)}</div>
+                            </div>
+                        </div>`;
+                    document.getElementById('btn-tab-di').classList.toggle('hidden', false);
+                }
+                if(wantsIEP) {
+                    document.getElementById('render-iep').innerHTML = `
+                        <h2 class="text-2xl font-bold text-amber-800 mb-4 border-b pb-2">第三級：個別化調整 (IEP)</h2>
+                        <div class="bg-slate-800 text-white rounded-xl p-5 mb-6 shadow-md"><strong class="text-amber-300">學生特質：</strong>${document.getElementById('iep-category').value} <br> <strong class="text-emerald-300">優勢：</strong>${document.getElementById('iep-strengths').value} | <strong class="text-red-300">弱勢：</strong>${document.getElementById('iep-weaknesses').value}</div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="p-5 bg-white border border-amber-200 rounded-xl shadow-sm"><strong class="text-amber-800 text-lg block mb-2">學習環境</strong>${safe(res.ie)}</div>
+                            <div class="p-5 bg-white border border-amber-200 rounded-xl shadow-sm"><strong class="text-amber-800 text-lg block mb-2">學習內容</strong>${safe(res.ic)}</div>
+                            <div class="p-5 bg-white border border-amber-200 rounded-xl shadow-sm"><strong class="text-amber-800 text-lg block mb-2">學習歷程</strong>${safe(res.ip)}</div>
+                            <div class="p-5 bg-white border border-amber-200 rounded-xl shadow-sm"><strong class="text-amber-800 text-lg block mb-2">學習評量</strong>${safe(res.ia)}</div>
+                        </div>`;
+                    document.getElementById('btn-tab-iep').classList.toggle('hidden', false);
+                }
+                window.switchTab(wantsUDL ? 'tab-udl' : (wantsDI ? 'tab-di' : 'tab-iep'));
+            } else { alert("AI 處理失敗，請重試。"); }
+            
+            document.getElementById('loading-state').classList.add('hidden');
+            document.getElementById('content-views').classList.remove('hidden');
+        };
+
+        window.toggleEditMode = () => {
+            isEditMode = !isEditMode;
+            document.querySelectorAll('.content-text, .editable-cell').forEach(el => el.setAttribute('contenteditable', isEditMode));
+            document.getElementById('btn-edit-mode').innerHTML = isEditMode ? '<i class="fas fa-save"></i> 儲存' : '<i class="fas fa-edit"></i> 編輯';
+        };
+
+        window.toggleExternalLinks = (e) => { e.stopPropagation(); document.getElementById('dropdown-ext-links').classList.toggle('hidden'); };
+        document.addEventListener('click', () => document.getElementById('dropdown-ext-links')?.classList.add('hidden'));
+        window.clearForm = () => location.reload();
+
+        window.downloadCurrentTabAsWord = () => {
+            const container = document.getElementById(window.currentActiveTab.replace('tab-', 'render-'));
+            const clone = container.cloneNode(true);
+            clone.querySelectorAll('.regen-btn, .activity-switcher').forEach(n => n.remove());
+            const html = `<html><head><meta charset='utf-8'><style>body{font-family:sans-serif;} table{width:100%;border-collapse:collapse;margin-bottom:20px;} th,td{border:1px solid #000;padding:8px;text-align:left;} th{background-color:#f2f2f2;} h2{font-size:24px;border-bottom:2px solid #000;}</style></head><body>${clone.innerHTML}</body></html>`;
+            const link = document.createElement('a'); link.href = URL.createObjectURL(new Blob(['\ufeff', html], { type: 'application/msword' }));
+            link.download = `${window.getActualTopic()}.doc`; link.click();
+        };
+        
+        window.loadPlanFromCloud = function(docId) {
+            const plan = window.cachedPlans.find(p => p.id === docId); if(!plan) return;
+            document.getElementById('empty-state').classList.add('hidden'); document.getElementById('content-views').classList.remove('hidden');
+            document.getElementById('tabs-container').classList.remove('hidden'); document.getElementById('toolbar-container').classList.remove('hidden');
+            document.getElementById('stage-2-container').classList.remove('opacity-50', 'pointer-events-none');
+            
+            document.getElementById('render-basic').innerHTML = plan.htmlBasic;
+            document.getElementById('render-udl').innerHTML = plan.htmlUdl;
+            document.getElementById('render-di').innerHTML = plan.htmlDi;
+            document.getElementById('render-iep').innerHTML = plan.htmlIep;
+            
+            document.getElementById('btn-tab-basic').classList.remove('hidden');
+            plan.htmlUdl ? document.getElementById('btn-tab-udl').classList.remove('hidden') : document.getElementById('btn-tab-udl').classList.add('hidden');
+            plan.htmlDi ? document.getElementById('btn-tab-di').classList.remove('hidden') : document.getElementById('btn-tab-di').classList.add('hidden');
+            plan.htmlIep ? document.getElementById('btn-tab-iep').classList.remove('hidden') : document.getElementById('btn-tab-iep').classList.add('hidden');
+            
+            window.closeCloudLibrary(); window.switchTab('tab-basic');
+            window.showToast("教案載入成功！", "success");
+            const sb = document.getElementById('left-sidebar'); if(sb.classList.contains('sidebar-collapsed')) window.toggleSidebar();
+        };
+
+    </script>
+</body>
+</html>
